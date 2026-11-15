@@ -2,7 +2,7 @@
 Personalised news recommendation with diversity-aware reranking using the IDEA dataset.
 
 ## Current status
-Repository scaffold only. Data processing, relevance scoring, SCRUF-D-inspired reranking, evaluation and API implementation are still to be built. The synthetic example is not an IDEA record or an experimental result.
+The evaluation V1 supports mock predictions with NDCG@10 and Recall@20. Data processing, relevance scoring, SCRUF-D-inspired reranking and API implementation are still to be built. The synthetic example is not an IDEA record or an experimental result.
 
 ## Team and responsibilities
 | Member | Main responsibility | Code directory |
@@ -44,7 +44,7 @@ Read `CONTRIBUTING.md`. Start each task from an up-to-date `main`, work on a bra
 Agree on `docs/interfaces.md` before integrating the components.
 
 ## Running the system and evaluation
-Not implemented yet. Each owner must add the exact working command and observed output when their component is available. Do not describe mock outputs as trained predictions.
+Evaluation V1 is available. After setup, run: `python -m agora.evaluation --predictions examples/mock_predictions.json --labels examples/mock_labels.json --output artifacts/evaluation/mock_metrics.json`. Run verification with `python -m unittest discover -s tests -v`. See `src/agora/evaluation/README.md` for formats and hand-calculated expectations. Other components are pending. Mock outputs are not trained predictions.
 
 ## Research reference
 Aird et al. (RecSys 2025), Integrating Individual and Group Fairness for Recommender Systems through Social Choice.
