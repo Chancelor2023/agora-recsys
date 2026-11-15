@@ -4,10 +4,11 @@
 Personalised news recommendation with diversity-aware reranking using the IDEA dataset.
 
 ## Current status
+The repository contains the initial component scaffold, a first mock recommendation API and Evaluation V1.
 
-The repository contains the initial component scaffold and a first mock recommendation API.
+The API currently returns synthetic recommendations based on `examples/feed_input.json`. Evaluation V1 supports mock predictions with NDCG@10 and Recall@20. These examples are integration and evaluation inputs, not IDEA records or experimental results.
 
-The API currently returns synthetic recommendations based on `examples/feed_input.json`. These are integration examples, not IDEA records or experimental results. Data processing, relevance scoring, SCRUF-D-inspired reranking and evaluation are still under development.
+Data processing, relevance scoring and SCRUF-D-inspired reranking are still under development.
 
 ## Team and responsibilities
 
@@ -83,6 +84,20 @@ See `data/README.md`. Do not commit raw participant records.
 Read `CONTRIBUTING.md`. Start each task from an up-to-date `main`, work on a branch such as `jerry/evaluation-v1`, and open a pull request with a runnable example.
 
 Agree on `docs/interfaces.md` before integrating the components.
+
+## Running the system and evaluation
+
+Evaluation V1 is available. After setup, run:
+
+`python -m agora.evaluation --predictions examples/mock_predictions.json --labels examples/mock_labels.json --output artifacts/evaluation/mock_metrics.json`
+
+Run verification with:
+
+`python -m unittest discover -s tests -v`
+
+See `src/agora/evaluation/README.md` for formats and hand-calculated expectations. Other components are pending. Mock outputs are not trained predictions.
+
+The recommendation API is available through the Uvicorn command documented above.
 
 ## Research reference
 

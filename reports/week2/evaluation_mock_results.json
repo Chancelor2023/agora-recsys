@@ -1,0 +1,40 @@
+{
+  "aggregation": "macro_by_feed",
+  "zero_positive_policy": "exclude_and_report_count",
+  "total_feeds": 3,
+  "evaluated_feeds": 2,
+  "excluded_zero_positive_feeds": 1,
+  "metrics": {
+    "NDCG@10": 0.7346393630113782,
+    "Recall@20": 0.8333333333333333
+  },
+  "per_feed": [
+    {
+      "user_id": "fictional-reader-1",
+      "feed_id": "mock-a",
+      "candidate_count": 26,
+      "positive_count": 3,
+      "excluded": false,
+      "NDCG@10": 0.46927872602275644,
+      "Recall@20": 0.6666666666666666
+    },
+    {
+      "user_id": "fictional-reader-2",
+      "feed_id": "mock-b",
+      "candidate_count": 26,
+      "positive_count": 2,
+      "excluded": false,
+      "NDCG@10": 1.0,
+      "Recall@20": 1.0
+    },
+    {
+      "user_id": "fictional-reader-3",
+      "feed_id": "mock-empty",
+      "candidate_count": 26,
+      "positive_count": 0,
+      "excluded": true,
+      "NDCG@10": null,
+      "Recall@20": null
+    }
+  ]
+}
