@@ -1,4 +1,9 @@
-# Proposed protocol from the initial plan; confirm timestamps and labels before use.
+# Temporal protocol V1 agreed by Brett and Ronald, as reported by Jerry.
+# Source timestamp interpretation and pipeline implementation still require verification.
+[protocol]
+version = "temporal-v1"
+agreement = "team_confirmed"
+source_timezone = "UNVERIFIED"
 [dataset]
 name = "IDEA"
 raw_dir = "data/raw"
@@ -18,6 +23,8 @@ test_end_exclusive = "2023-12-08"
 
 [profiles]
 history_source = "training_reads_only"
+freeze_for_validation_and_test = true
+training_feed_history = "strictly_before_feed"
 min_distinct_training_articles = 5
 
 [evaluation]
@@ -30,3 +37,13 @@ zero_positive_policy = "exclude_and_report_count"
 
 [reproducibility]
 seed = 42
+
+[attribution]
+interval = "start_inclusive_end_exclusive"
+max_window_hours = 24
+next_feed_source = "original_unfiltered_reader_feed_sequence"
+cap_at_next_reader_feed = true
+cap_at_partition_end = true
+cap_at_observation_end = true
+first_reads_only = true
+report_shortened_windows = true

@@ -29,3 +29,6 @@ Response: user_id, feed_id, model_version, is_mock, items ordered by rank.
 Each item includes article_id, rank, title, lead, outlet and published_at.
 Proposed POST /log_interaction: event_id, user_id, feed_id, article_id, event_type, timestamp, displayed_rank and model_version.
 Use event_type display or click. The backend should validate and persist actual application events; source recommendation records remain distinguishable.
+
+## Validated temporal agreement
+See [temporal_protocol.md](temporal_protocol.md) for the agreed methodology and [evaluation_handoff.md](evaluation_handoff.md) for the real-data handoff. Agreement does not replace verification of source timestamps and canonical IDs.

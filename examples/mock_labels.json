@@ -1,0 +1,395 @@
+{
+  "is_synthetic": true,
+  "labels": [
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-01",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-02",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-03",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-04",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-05",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-06",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-07",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-08",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-09",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-10",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-11",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-12",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-13",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-14",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-15",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-16",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-17",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-18",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-19",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-20",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-21",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-22",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-23",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-24",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-25",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-a",
+      "article_id": "mock-a-article-26",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-01",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-02",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-03",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-04",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-05",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-06",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-07",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-08",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-09",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-10",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-11",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-12",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-13",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-14",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-15",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-16",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-17",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-18",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-19",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-20",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-21",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-22",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-23",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-24",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-25",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-b",
+      "article_id": "mock-b-article-26",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-01",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-02",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-03",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-04",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-05",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-06",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-07",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-08",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-09",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-10",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-11",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-12",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-13",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-14",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-15",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-16",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-17",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-18",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-19",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-20",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-21",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-22",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-23",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-24",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-25",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-empty",
+      "article_id": "mock-empty-article-26",
+      "label": 0
+    }
+  ]
+}

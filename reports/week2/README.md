@@ -6,7 +6,7 @@ For each owner: Done / In progress / Blocked, commit or PR, exact run command, o
 | --- | --- | --- |
 | Q1: V1 pipeline processed the entire initial dataset? | To assess | |
 | Q2: Innovative algorithm skeleton completes one forward pass? | To assess | |
-| Q3: Evaluation harness returns a metric on mock predictions? | To assess | |
+| Q3: Evaluation harness returns a metric on mock predictions? | Yes (local) | [Executed mock evaluation and tests](evaluation_evidence.md); commit/PR link pending |
 | Q4: Backend returns mock recommendations? | To assess | |
 | Q5: Ahead, on schedule or behind Week 1 plan? | To assess | |
 
