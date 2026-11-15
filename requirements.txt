@@ -1,2 +1,2 @@
-# Install the project; declare shared runtime dependencies in pyproject.toml.
--e .
+
+-e .[dev]
