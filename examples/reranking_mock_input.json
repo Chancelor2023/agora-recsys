@@ -1,0 +1,243 @@
+{
+  "is_synthetic": true,
+  "warning": "Fictional relevance scores and topics for reranking interface checks; not IDEA data.",
+  "feeds": [
+    {
+      "user_id": "fictional-reader-1",
+      "feed_id": "mock-rr-1",
+      "generated_at": "2023-12-01T09:00:00Z",
+      "candidates": [
+        {
+          "article_id": "mock-rr-1-article-01",
+          "relevance_score": 0.95,
+          "topic": "sport",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-02",
+          "relevance_score": 0.9,
+          "topic": "entertainment",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-03",
+          "relevance_score": 0.85,
+          "topic": "sport",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-04",
+          "relevance_score": 0.8,
+          "topic": "business",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-05",
+          "relevance_score": 0.75,
+          "topic": "entertainment",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-06",
+          "relevance_score": 0.7,
+          "topic": "politics",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-07",
+          "relevance_score": 0.65,
+          "topic": "sport",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-08",
+          "relevance_score": 0.6,
+          "topic": "environment",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-09",
+          "relevance_score": 0.55,
+          "topic": "world",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-10",
+          "relevance_score": 0.5,
+          "topic": "business",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-11",
+          "relevance_score": 0.45,
+          "topic": "politics",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-1-article-12",
+          "relevance_score": 0.4,
+          "topic": "entertainment",
+          "outlet": "Example News"
+        }
+      ]
+    },
+    {
+      "user_id": "fictional-reader-2",
+      "feed_id": "mock-rr-2",
+      "generated_at": "2023-12-02T09:00:00Z",
+      "candidates": [
+        {
+          "article_id": "mock-rr-2-article-01",
+          "relevance_score": 0.95,
+          "topic": "entertainment",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-02",
+          "relevance_score": 0.9,
+          "topic": "sport",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-03",
+          "relevance_score": 0.85,
+          "topic": "business",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-04",
+          "relevance_score": 0.8,
+          "topic": "entertainment",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-05",
+          "relevance_score": 0.75,
+          "topic": "politics",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-06",
+          "relevance_score": 0.7,
+          "topic": "sport",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-07",
+          "relevance_score": 0.65,
+          "topic": "environment",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-08",
+          "relevance_score": 0.6,
+          "topic": "world",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-09",
+          "relevance_score": 0.55,
+          "topic": "business",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-10",
+          "relevance_score": 0.5,
+          "topic": "politics",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-11",
+          "relevance_score": 0.45,
+          "topic": "entertainment",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-2-article-12",
+          "relevance_score": 0.4,
+          "topic": "sport",
+          "outlet": "Example News"
+        }
+      ]
+    },
+    {
+      "user_id": "fictional-reader-3",
+      "feed_id": "mock-rr-3",
+      "generated_at": "2023-12-03T09:00:00Z",
+      "candidates": [
+        {
+          "article_id": "mock-rr-3-article-01",
+          "relevance_score": 0.95,
+          "topic": "sport",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-02",
+          "relevance_score": 0.9,
+          "topic": "business",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-03",
+          "relevance_score": 0.85,
+          "topic": "entertainment",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-04",
+          "relevance_score": 0.8,
+          "topic": "politics",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-05",
+          "relevance_score": 0.75,
+          "topic": "sport",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-06",
+          "relevance_score": 0.7,
+          "topic": "environment",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-07",
+          "relevance_score": 0.65,
+          "topic": "world",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-08",
+          "relevance_score": 0.6,
+          "topic": "business",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-09",
+          "relevance_score": 0.55,
+          "topic": "politics",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-10",
+          "relevance_score": 0.5,
+          "topic": "entertainment",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-11",
+          "relevance_score": 0.45,
+          "topic": "sport",
+          "outlet": "Example News"
+        },
+        {
+          "article_id": "mock-rr-3-article-12",
+          "relevance_score": 0.4,
+          "topic": "entertainment",
+          "outlet": "Example News"
+        }
+      ]
+    }
+  ]
+}

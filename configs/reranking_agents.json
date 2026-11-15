@@ -1,0 +1,12 @@
+{
+  "status": "provisional: topic groups and targets must be validated against IDEA topics by the team",
+  "lambda": 0.5,
+  "k": 10,
+  "window": 50,
+  "allocation": "lottery",
+  "seed": 42,
+  "agents": [
+    {"name": "public_affairs", "attribute": "topic", "protected_values": ["politics", "world"], "target_share": 0.3},
+    {"name": "environment", "attribute": "topic", "protected_values": ["environment"], "target_share": 0.1}
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "is_synthetic": true,
+  "warning": "Arbitrary labels for interface checks, not model input or experimental evidence.",
+  "labels": [
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-01",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-02",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-03",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-04",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-05",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-06",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-07",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-08",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-09",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-10",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-11",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-1",
+      "article_id": "mock-rr-1-article-12",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-01",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-02",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-03",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-04",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-05",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-06",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-07",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-08",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-09",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-10",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-11",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-2",
+      "article_id": "mock-rr-2-article-12",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-01",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-02",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-03",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-04",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-05",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-06",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-07",
+      "label": 1
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-08",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-09",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-10",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-11",
+      "label": 0
+    },
+    {
+      "feed_id": "mock-rr-3",
+      "article_id": "mock-rr-3-article-12",
+      "label": 0
+    }
+  ]
+}
