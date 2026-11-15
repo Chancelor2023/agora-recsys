@@ -1,0 +1,33 @@
+{
+  "is_synthetic": true,
+  "user_id": "demo-user",
+  "feed_id": "demo-feed",
+  "generated_at": "2023-12-03T09:00:00Z",
+  "history": [
+    {
+      "article_id": "demo-history",
+      "read_at": "2023-11-28T09:00:00Z",
+      "title": "Household energy costs",
+      "lead": "A fictional article for integration.",
+      "topic": "business"
+    }
+  ],
+  "candidates": [
+    {
+      "article_id": "demo-a",
+      "title": "Energy policy debate",
+      "lead": "A fictional policy article.",
+      "topic": "politics",
+      "outlet": "Example News",
+      "published_at": "2023-12-03T08:00:00Z"
+    },
+    {
+      "article_id": "demo-b",
+      "title": "Urban transport investment",
+      "lead": "A fictional transport article.",
+      "topic": "environment",
+      "outlet": "Example Daily",
+      "published_at": "2023-12-03T08:30:00Z"
+    }
+  ]
+}

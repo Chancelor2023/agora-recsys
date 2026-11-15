@@ -1,0 +1,16 @@
+{
+  "is_synthetic": true,
+  "warning": "Arbitrary labels for interface checks, not model input or experimental evidence.",
+  "labels": [
+    {
+      "feed_id": "demo-feed",
+      "article_id": "demo-a",
+      "label": 1
+    },
+    {
+      "feed_id": "demo-feed",
+      "article_id": "demo-b",
+      "label": 0
+    }
+  ]
+}

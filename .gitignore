@@ -218,3 +218,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Agora local datasets and generated artifacts
+/data/raw/
+/data/processed/
+/artifacts/*
+!/artifacts/README.md
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db

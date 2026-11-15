@@ -1,0 +1,32 @@
+# Proposed protocol from the initial plan; confirm timestamps and labels before use.
+[dataset]
+name = "IDEA"
+raw_dir = "data/raw"
+processed_dir = "data/processed"
+primary_scope = "full_daily_feeds"
+supplementary_scope = "public_affairs"
+
+[split]
+# Half-open intervals: start inclusive, end exclusive.
+# Interpret boundaries in the source timezone, to be confirmed by the data owner.
+train_start = "2023-11-23"
+train_end_exclusive = "2023-11-30"
+validation_start = "2023-11-30"
+validation_end_exclusive = "2023-12-03"
+test_start = "2023-12-03"
+test_end_exclusive = "2023-12-08"
+
+[profiles]
+history_source = "training_reads_only"
+min_distinct_training_articles = 5
+
+[evaluation]
+ndcg_k = 10
+recall_k = 20
+supplementary_ndcg_k = 5
+supplementary_recall_k = 5
+# Excluded feeds must also be counted and reported.
+zero_positive_policy = "exclude_and_report_count"
+
+[reproducibility]
+seed = 42
