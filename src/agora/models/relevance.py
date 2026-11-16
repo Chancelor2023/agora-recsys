@@ -29,7 +29,7 @@ class RelevanceModel:
             raise ValueError('Invalid model coefficients')
 
     @classmethod
-    def fit(cls, features, labels, regularization=1.0):
+    def fit(cls, features, labels, regularization=1.0, seed=42):
         features = np.asarray(features, dtype=float)
         labels = np.asarray(labels)
         if features.ndim != 2 or features.shape[1] != 3 or not np.isfinite(features).all():
@@ -38,7 +38,7 @@ class RelevanceModel:
             raise ValueError('Training requires matching binary labels with both classes')
         if regularization <= 0:
             raise ValueError('Regularization C must be positive')
-        classifier = LogisticRegression(C=regularization, max_iter=1000, random_state=42)
+        classifier = LogisticRegression(C=regularization, max_iter=1000, random_state=seed)
         with warnings.catch_warnings():
             warnings.simplefilter('error', ConvergenceWarning)
             classifier.fit(features, labels)

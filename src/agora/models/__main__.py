@@ -1,24 +1,21 @@
 """CLI for Ronald's component. Run python -m agora.models --help."""
 import argparse
+import hashlib
+import random
 import json
 from pathlib import Path
-import tomllib
 import numpy as np
 import pandas as pd
 from agora.profiles import ProfileBuilder, TemporalProtocol
+from .config import load_model_config
 from .embeddings import encode_articles, load_embeddings
 from .io import (file_hash, load_articles, load_feeds, load_reads, read_records,
                  require_ids, write_json)
-from .relevance import FeedPredictor, RelevanceModel
+from .relevance import FeedPredictor, RelevanceModel, rank_candidates
 
 
 def load_context(args):
-    config = tomllib.loads(Path(args.config).read_text(encoding='utf-8'))
-    if not config.get('synthetic', False):
-        if not config.get('source_timezone_verified', False):
-            raise ValueError('Real inputs require a verified source timezone and audit reference')
-        if not config.get('audit_reference', '').strip():
-            raise ValueError('Provide the data audit reference in the configuration')
+    config = load_model_config(args.config)
     articles = load_articles(args.articles)
     vectors, encoder = load_embeddings(Path(args.embeddings), articles)
     if not config.get('synthetic', False) and encoder['backend'] == 'hashing':
@@ -59,7 +56,7 @@ def train(args):
         targets.extend(int(target.loc[(feed['feed_id'], a)]) for a in feed['candidates'])
     if not matrices:
         raise ValueError('No training feeds with nonempty prior history')
-    model, report = RelevanceModel.fit(np.concatenate(matrices), targets, args.C)
+    model, report = RelevanceModel.fit(np.concatenate(matrices), targets, args.C, config["seed"])
     report.update({'synthetic': config.get('synthetic', False), 'feeds_received': len(feeds),
                    'feeds_trained': len(matrices), 'feeds_skipped_empty_history': skipped,
                    'eligible_users': len(builder.eligible), 'encoder': encoder,
@@ -87,11 +84,27 @@ def predict(args):
     feeds.sort(key=lambda f: (pd.Timestamp(f['generated_at']), f['user_id'], f['feed_id']))
     predictions = []
     for feed in feeds:
-        predictions.extend(predictor.predict_feed(feed['user_id'], feed['feed_id'],
-                           feed['generated_at'], feed['candidates'], args.split))
-    write_json(args.output, {'predictions': predictions})
+        if args.ranking == 'model':
+            rows = predictor.predict_feed(feed['user_id'], feed['feed_id'],
+                       feed['generated_at'], feed['candidates'], args.split)
+        else:
+            cutoff = builder.protocol.cutoff(feed['generated_at'], args.split)
+            features, _ = builder.features(feed['user_id'], feed['candidates'], cutoff)
+            if args.ranking == 'popularity':
+                scores = features[:, 2]
+            elif args.ranking == 'content':
+                scores = features[:, 0]
+            else:
+                seed = int(hashlib.sha256(f"{args.random_seed}:{feed['feed_id']}".encode()).hexdigest(), 16)
+                generator = random.Random(seed)
+                by_id = {a: generator.random() for a in sorted(feed['candidates'])}
+                scores = [by_id[a] for a in feed['candidates']]
+            rows = rank_candidates(feed['user_id'], feed['feed_id'], feed['candidates'], scores)
+        predictions.extend(rows)
+    write_json(args.output, {'is_synthetic': config.get('synthetic', False), 'predictions': predictions})
     report = {'synthetic': config.get('synthetic', False), 'split': args.split,
               'feeds': len(feeds), 'predictions': len(predictions),
+              'ranking': args.ranking, 'random_seed': args.random_seed,
               'model_version': payload['model_version'], 'output_sha256': file_hash(args.output)}
     write_json(str(args.output) + '.report.json', report)
     print(json.dumps(report, indent=2))
@@ -117,6 +130,8 @@ def main():
         else:
             sub.add_argument('--split', choices=['validation', 'test'], required=True)
             sub.add_argument('--output', required=True)
+            sub.add_argument('--ranking', choices=['model', 'popularity', 'random', 'content'], default='model')
+            sub.add_argument('--random-seed', type=int, default=42)
     freeze = commands.add_parser('freeze')
     freeze.add_argument('--model', required=True)
     freeze.add_argument('--validation-note', required=True, help='Reference to selected validation settings/results')

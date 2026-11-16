@@ -46,7 +46,10 @@ class TemporalProtocol:
 class ProfileBuilder:
     def __init__(self, reads, articles, embeddings, protocol):
         self.protocol = protocol
-        self.articles = articles.set_index('article_id', verify_integrity=True)
+        self.articles = articles.set_index("article_id")
+
+        if not self.articles.index.is_unique:
+            raise ValueError("Duplicate canonical article IDs")
         ids = articles.article_id.tolist()
         vectors = np.asarray(embeddings, dtype=float)
         if vectors.ndim != 2 or vectors.shape[0] != len(ids) or not np.isfinite(vectors).all():
