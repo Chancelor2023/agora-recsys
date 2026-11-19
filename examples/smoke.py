@@ -47,7 +47,11 @@ def main():
               '--reads', root / 'reads_train.csv', '--embeddings', root / 'embeddings.npz',
               '--model', root / 'model.json']
     run('train', *shared, '--feeds', root / 'feeds_train.json', '--labels', root / 'train_labels.json',
-        '--report', root / 'training_report.json')
+        '--validation-feeds', root / 'feeds_validation.json',
+        '--validation-labels', root / 'validation_labels.json',
+        '--report', root / 'training_report.json', '--curves', root / 'loss_curves.png')
+    report = json.loads((root / 'training_report.json').read_text())
+    assert report['history'] and 'validation_log_loss' in report['history'][-1]
     run('predict', *shared, '--feeds', root / 'feeds_validation.json', '--split', 'validation',
         '--output', root / 'validation_predictions.json')
     run('freeze', '--model', root / 'model.json', '--validation-note', 'Synthetic CLI smoke check only')

@@ -73,6 +73,36 @@ class RelevanceTests(unittest.TestCase):
             restored, _ = RelevanceModel.load(path)
             np.testing.assert_array_equal(model.predict(x), restored.predict(x))
 
+    def _separable(self, n=200, seed=0):
+        rng = np.random.default_rng(seed)
+        x = rng.uniform(0, 1, size=(n, 3))
+        y = (x[:, 0] + 0.5 * x[:, 1] + rng.normal(0, 0.2, n) > 0.8).astype(int)
+        return x, y
+
+    def test_epoch_history_decreases_and_is_finite(self):
+        x, y = self._separable()
+        _, report = RelevanceModel.fit(x, y, epochs=120)
+        losses = [row['train_log_loss'] for row in report['history']]
+        self.assertEqual(len(losses), 120)
+        self.assertTrue(np.isfinite(losses).all())
+        self.assertLess(losses[-1], losses[0])
+        self.assertLess(report['training_log_loss'], report['prevalence_baseline_log_loss'])
+
+    def test_validation_curve_and_best_epoch_kept(self):
+        x, y = self._separable(seed=1)
+        vx, vy = self._separable(n=80, seed=2)
+        model, report = RelevanceModel.fit(x, y, validation=(vx, vy), epochs=400, patience=15)
+        self.assertIn('validation_log_loss', report['history'][0])
+        best = min(row['validation_log_loss'] for row in report['history'])
+        self.assertAlmostEqual(report['validation_log_loss'], best, places=6)
+        self.assertLessEqual(report['best_epoch'], report['epochs_run'])
+
+    def test_training_is_deterministic(self):
+        x, y = self._separable()
+        a, _ = RelevanceModel.fit(x, y, epochs=50, seed=7)
+        b, _ = RelevanceModel.fit(x, y, epochs=50, seed=7)
+        np.testing.assert_array_equal(a.weights, b.weights)
+
     def test_single_class_rejected(self):
         with self.assertRaises(ValueError):
             RelevanceModel.fit(np.ones((2, 3)), [0, 0])
