@@ -7,10 +7,25 @@ from .config import load_cutoffs
 
 
 def _load(path, key):
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    text = path.read_text(encoding="utf-8-sig")
+
+    try:
+        payload = json.loads(text)
+    except json.JSONDecodeError:
+        # JSONL contient un objet JSON par ligne.
+        payload = [
+            json.loads(line)
+            for line in text.splitlines()
+            if line.strip()
+        ]
+
     rows = payload.get(key) if isinstance(payload, dict) else payload
+
     if not isinstance(rows, list):
-        raise ValueError(f"{path}: expected a list or an object containing {key}")
+        raise ValueError(
+            f"{path}: expected a list or an object containing {key}"
+        )
+
     return rows
 
 

@@ -1,2 +1,7 @@
 
 -e .[dev]
+numpy>=1.26,<3
+pandas>=2.1,<4
+scikit-learn>=1.4,<2
+sentence-transformers>=3,<6
+tzdata>=2024.1
