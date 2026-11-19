@@ -8,7 +8,7 @@ The repository contains the initial component scaffold, a first mock recommendat
 
 The API currently returns synthetic recommendations based on `examples/feed_input.json`. Evaluation V1 supports mock predictions with NDCG@10 and Recall@20. These examples are integration and evaluation inputs, not IDEA records or experimental results.
 
-Data processing, relevance scoring and SCRUF-D-inspired reranking are still under development.
+SCRUF-D-inspired reranking V1 runs on synthetic relevance scores. Data processing and relevance scoring are still under development.
 
 ## Team and responsibilities
 
@@ -98,6 +98,12 @@ Run verification with:
 See `src/agora/evaluation/README.md` for formats and hand-calculated expectations. Other components are pending. Mock outputs are not trained predictions.
 
 The recommendation API is available through the Uvicorn command documented above.
+
+Reranking V1 is available:
+
+python -m agora.reranking --input examples/reranking_mock_input.json --config configs/reranking_agents.json --output artifacts/reranking/mock_predictions.json
+
+Add --lambda 0 for the relevance-only ablation. See src/agora/reranking/README.md.
 
 ## Research reference
 
