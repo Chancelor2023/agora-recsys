@@ -65,16 +65,25 @@ with st.sidebar:
         if not live.get("available"):
             st.caption(f"Live news off: {live.get('reason', '')}")
     top_k = st.slider("Articles shown", 5, 26, 10)
+    refresh = st.button("New recommendation")
     st.caption(f"Model: `{mode['model_version']}`")
 
-try:
-    if feed_id == "live":
-        data = api("GET", "/recommend_live", params={"user_id": user_id, "limit": 26})
-    else:
-        data = api("GET", "/recommend", params={"user_id": user_id, "feed_id": feed_id})
-except requests.HTTPError as error:
-    st.error(f"The API refused this request: {error.response.text}")
-    st.stop()
+# Keep the list that was served until the reader asks for a new one: every call to the
+# API updates SCRUF-D's exposure state, so a new call may reorder the list, and a click
+# on an article that left the page would be lost.
+rec_key = f"rec-{user_id}-{feed_id}"
+if refresh or rec_key not in st.session_state:
+    try:
+        if feed_id == "live":
+            fetched = api("GET", "/recommend_live", params={"user_id": user_id, "limit": 26})
+        else:
+            fetched = api("GET", "/recommend", params={"user_id": user_id, "feed_id": feed_id})
+    except requests.HTTPError as error:
+        st.error(f"The API refused this request: {error.response.text}")
+        st.stop()
+    st.session_state[rec_key] = fetched
+    st.session_state[f"served-{rec_key}"] = st.session_state.get(f"served-{rec_key}", 0) + 1
+data = st.session_state[rec_key]
 items = data["items"][:top_k]
 
 latency = data.get("latency_ms")
@@ -82,8 +91,8 @@ st.caption(f"{len(data['items'])} articles ranked"
            + (f" in {latency:.0f} ms" if latency is not None else "")
            + (" · mock data" if data["is_mock"] else ""))
 
-# Log one 'display' event per shown article, once per (feed, size) in this session.
-shown_key = f"shown-{feed_id}-{top_k}"
+# Log one 'display' event per shown article, once per served list and page size.
+shown_key = f"shown-{rec_key}-{st.session_state[f'served-{rec_key}']}-{top_k}"
 if shown_key not in st.session_state:
     for item in items:
         log_event("display", item, data)

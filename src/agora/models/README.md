@@ -7,12 +7,14 @@ Content representations, relevance models, training and prediction.
 NRMS-style news recommender (Wu et al., EMNLP 2019), in PyTorch:
 - **News encoder:** the article's text vector (`embeddings.py`), projected, plus learned topic and outlet embeddings.
 - **User encoder:** multi-head self-attention over the reader's last 50 reads before the feed, then additive attention pooling into one user vector.
-- **Click predictor (Wide & Deep):** a linear part over six point-in-time signals (content similarity, topic affinity, freshness, outlet affinity, topic popularity, outlet popularity) plus an MLP over the user-article interaction. The deep part starts at zero and only adds what improves validation loss.
+- **Click predictor (Wide & Deep):** a linear part over the reader-specific signals (content similarity, topic affinity, outlet affinity) plus an MLP over the user-article interaction. The deep part starts at zero and only adds what improves validation loss. `--with-global-signals` also feeds freshness and topic/outlet popularity; this lowered validation NDCG@10 (0.389 vs 0.405).
 - **Position-bias tower (PAL, Guo et al., RecSys 2019):** in IDEA readers mostly read what was displayed at the top. A learned per-position term is added to the logit in training only and dropped at recommendation, so the network learns relevance rather than the old display order.
 - **Training:** listwise softmax loss per feed (as NRMS), AdamW, epoch by epoch, early stopping on validation loss; seed 42.
 - **New articles:** it scores articles from their text, topic and outlet, so today's RSS articles can be recommended without retraining (`live.py`, `embeddings.load_text_encoder`).
 
-Article-level popularity is not given to the network: none of the validation or test candidates was read during training (they are new articles), so popularity is taken at topic and outlet level.
+Article-level popularity is not given to the network: none of the validation or test candidates was read during training (they are new articles).
+
+Known limitation: lists are much less personal than the logistic baseline's (top-10 overlap between readers with the same candidates 0.82 vs 0.49, `python -m agora.experiment`).
 
 ## Logistic baseline — `relevance.py`
 Logistic regression on content similarity, topic affinity and article popularity, trained epoch by epoch with early stopping.

@@ -57,6 +57,7 @@ class RecommenderService:
         self.live_reranker = live_reranker
         self.text_encoder = text_encoder
         self.live_path = live_path
+        self.live_pool = 26  # size of the personal candidate pool, as an IDEA daily feed
         self._live = None  # (mtime, articles DataFrame, vectors)
         self.articles = articles.set_index("article_id", drop=False)
         self.feeds = feeds
@@ -176,8 +177,14 @@ class RecommenderService:
         status = self.live_status()
         if not status["available"]:
             raise LookupError(status["reason"])
-        _, frame, vectors = self._load_live()
+        _, all_articles, all_vectors = self._load_live()
         builder = self.predictor.builder
+        # Stage 1, candidate generation: a personal pool of `pool` articles, the reader's
+        # closest article in every topic (coverage) then the closest overall (interest).
+        # Stage 2 ranks this pool, the setting the model was trained in (IDEA feeds of ~26).
+        keep = _personal_pool(builder, user_id, all_articles, all_vectors, self.live_pool)
+        frame = all_articles.iloc[keep].reset_index(drop=True)
+        vectors = all_vectors[keep]
         features, history = live_features(builder, user_id, frame, vectors, now=now)
         model = self.predictor.model
         if hasattr(model, "score_articles"):
@@ -200,3 +207,27 @@ class RecommenderService:
                           "relevance_score": row["relevance_score"],
                           "reranking_score": row["reranking_score"]})
         return items
+
+
+def _personal_pool(builder, user_id, articles, vectors, size):
+    """Indices of a personal candidate pool: best per topic, then best overall."""
+    from agora.models.live import reader_history
+
+    past = reader_history(builder, user_id, builder.protocol.train_end)
+    profile = builder.vectors[[builder.positions[a] for a in past.article_id]].mean(axis=0)
+    profile /= max(np.linalg.norm(profile), 1e-12)
+    norms = np.maximum(np.linalg.norm(vectors, axis=1), 1e-12)
+    similarity = (vectors @ profile) / norms
+    order = list(np.argsort(-similarity, kind="stable"))
+    chosen, seen_topics = [], set()
+    for i in order:  # coverage: the closest article of each topic
+        topic = articles.topic.iloc[i]
+        if topic not in seen_topics:
+            seen_topics.add(topic)
+            chosen.append(i)
+    for i in order:  # interest: fill with the closest articles overall
+        if len(chosen) >= size:
+            break
+        if i not in chosen:
+            chosen.append(i)
+    return sorted(chosen[:size])

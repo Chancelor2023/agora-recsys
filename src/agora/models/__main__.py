@@ -117,7 +117,8 @@ def train_neural(args):
     cfg = NeuralConfig(epochs=args.epochs, patience=args.patience, max_history=args.max_history,
                        hidden=args.hidden, learning_rate=args.learning_rate, seed=config['seed'],
                        dropout=args.dropout, weight_decay=args.weight_decay, loss=args.loss,
-                       position_debias=not args.no_position_debias)
+                       position_debias=not args.no_position_debias,
+                       personal_signals_only=not args.with_global_signals)
     model = NeuralRecommender(builder, cfg)
     report = model.fit(train, validation)
     report.update({'synthetic': config.get('synthetic', False), 'feeds_received': len(feeds),
@@ -221,6 +222,8 @@ def main():
             sub.add_argument('--dropout', type=float, default=0.3)
             sub.add_argument('--weight-decay', type=float, default=1e-3)
             sub.add_argument('--loss', choices=['listwise', 'pointwise'], default='listwise')
+            sub.add_argument('--with-global-signals', action='store_true',
+                             help='Also feed freshness, topic and outlet popularity (same for every reader)')
             sub.add_argument('--no-position-debias', action='store_true',
                              help='Ablation: train without the position-bias tower')
             sub.add_argument('--curves')

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import email.utils
+import gzip
 import hashlib
 import html
 import json
@@ -100,9 +101,14 @@ def parse_feed(xml_bytes: bytes, source: dict, fetched_at: datetime) -> list[dic
 
 
 def fetch(url: str, timeout: float = 10.0) -> bytes:
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    request = urllib.request.Request(url, headers={
+        "User-Agent": USER_AGENT, "Accept-Encoding": "gzip, identity",
+        "Accept": "application/rss+xml, application/xml, text/xml, */*"})
     with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310 (public RSS)
-        return response.read()
+        data = response.read()
+    if data[:2] == b"\x1f\x8b":  # gzip-compressed body (some outlets send it regardless)
+        data = gzip.decompress(data)
+    return data.lstrip()
 
 
 def collect(sources: list[dict], max_age_hours: float = 48.0, fetcher=fetch,

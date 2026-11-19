@@ -50,6 +50,7 @@ class NeuralConfig:
     seed: int = 42
     loss: str = 'listwise'  # 'listwise' (softmax over the feed, as NRMS) or 'pointwise' (BCE)
     position_debias: bool = True  # PAL: learn the display-position effect in training only
+    personal_signals_only: bool = True  # drop freshness / topic / outlet popularity (same for every reader)
 
 
 # --------------------------------------------------------------------------- #
@@ -207,6 +208,10 @@ class NRMSRecommender(nn.Module):
         # rest of the network learns relevance. It is dropped at recommendation.
         self.position_bias = nn.Embedding(MAX_POSITION, 1)
         nn.init.zeros_(self.position_bias.weight)
+        # content similarity, topic affinity and outlet affinity depend on the reader;
+        # freshness, topic popularity and outlet popularity are the same for everyone
+        self.personal_only = cfg.personal_signals_only
+        self.register_buffer('personal_mask', torch.tensor([1., 1., 0., 1., 0., 0.]))
 
     def news_from_parts(self, text, topic, outlet):
         x = torch.tanh(self.text_proj(text)) + self.topic_emb(topic) + self.outlet_emb(outlet)
@@ -222,6 +227,8 @@ class NRMSRecommender(nn.Module):
         return self.pool(attended, hist_mask)
 
     def forward(self, hist, hist_mask, cand, feats, positions=None, news=None):
+        if self.personal_only:
+            feats = feats * self.personal_mask
         user = self.encode_user(hist, hist_mask)                       # (B, H)
         news = self.encode_news(cand) if news is None else news        # (B, C, H)
         user = user.unsqueeze(1).expand_as(news)
@@ -365,7 +372,7 @@ class NeuralRecommender:
     # -- persistence ------------------------------------------------------- #
     def save(self, path, metadata):
         buffer = io.BytesIO()
-        state = {k: v for k, v in self.net.state_dict().items() if k not in ('text', 'topic', 'outlet')}
+        state = {k: v for k, v in self.net.state_dict().items() if k not in ('text', 'topic', 'outlet', 'personal_mask')}
         torch.save(state, buffer)
         digest = hashlib.sha256(buffer.getvalue()).hexdigest()[:16]
         torch.save({'schema_version': 1, 'config': asdict(self.cfg), 'state_dict': state,
@@ -381,7 +388,7 @@ class NeuralRecommender:
         model = cls(builder, NeuralConfig(**payload['config']),
                     payload['topic_vocab'], payload['outlet_vocab'])
         missing, unexpected = model.net.load_state_dict(payload['state_dict'], strict=False)
-        if unexpected or set(missing) - {'text', 'topic', 'outlet'}:
+        if unexpected or set(missing) - {'text', 'topic', 'outlet', 'personal_mask'}:
             raise ValueError('Neural model weights do not match the architecture')
         return model, payload
 

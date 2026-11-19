@@ -16,7 +16,7 @@ Output: `predictions` rows (`user_id`, `feed_id`, `article_id`, contiguous `rank
 Agents and targets are declared in `configs/reranking_agents.json` (provisional until IDEA topics are confirmed).
 
 ## Real data
-Agents and targets: `configs/reranking_agents.json` (target = the topic's share of candidates). On IDEA validation, the neural model gives politics 6.4% of top-10 exposure for an 8.2% share of the candidates (the logistic baseline 4.3%). SCRUF-D with lambda 0.25 raises it to 8.7% for -0.003 NDCG@10. Full table, lambda sweep, trade-off plot and three reader examples: `python -m agora.experiment --split validation` → `reports/week3/experiment_validation.md`.
+Agents and targets: `configs/reranking_agents.json` (target = the topic's share of candidates). On IDEA validation, the neural model gives politics 7.1% of top-10 exposure for an 8.2% share of the candidates (the logistic baseline 4.3%). SCRUF-D with lambda 0.25 raises it to 9.3% for -0.005 NDCG@10. Full table, lambda sweep, trade-off plot and three reader examples: `python -m agora.experiment --split validation` → `reports/week3/experiment_validation.md`.
 
 ```
 python -m agora.reranking --input <relevance predictions.json> --articles data/processed/articles.json --output <reranked.json>

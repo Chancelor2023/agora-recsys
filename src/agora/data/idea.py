@@ -71,7 +71,7 @@ TOPIC_RULES: list[tuple[str, tuple[str, ...]]] = [
                "lorry deaths", "oscar pistorius", "disappearance", "george floyd", "graffiti",
                "gun", "sexual violence", "bullying")),
     ("opinion", ("opinion", "commentisfree", "comment", "voices", "theobserver", "diary")),
-    ("lifestyle", ("lifeandstyle", "life", "food", "drink", "wine", "travel", "holidays", "wellness",
+    ("lifestyle", ("lifestyle", "lifeandstyle", "life", "food", "drink", "wine", "travel", "holidays", "wellness",
                    "beauty", "skincare", "makeup", "hair", "fashion", "shoes", "accessories",
                    "fitness", "black friday", "christmas", "shopping", "dating", "wedding", "home",
                    "furniture", "interiors", "bedroom", "bathroom", "kitchen", "appliances",
@@ -90,11 +90,18 @@ TOPIC_RULES: list[tuple[str, tuple[str, ...]]] = [
 ]
 
 
+# Exact section names that the keyword rules would misread. Sky News' "home" and
+# The Independent's "Home News" are front-page general news, not home and garden.
+EXACT_TOPICS = {"home": "uk_news", "home news": "uk_news", "uk": "uk_news"}
+
+
 def normalize_topic(category) -> str:
     """Map a raw IDEA primaryCategory to one of the coarse topics, else 'other'."""
     if not isinstance(category, str) or not category.strip():
         return "other"
     text = html.unescape(category).strip().lower()
+    if text in EXACT_TOPICS:
+        return EXACT_TOPICS[text]
     for topic, keys in TOPIC_RULES:
         for key in keys:
             if text == key or re.search(r"(?<![a-z])" + re.escape(key) + r"s?(?![a-z])", text):
