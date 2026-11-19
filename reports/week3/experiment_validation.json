@@ -1,0 +1,142 @@
+{
+  "split": "validation",
+  "feeds": 1620,
+  "neural_model": "nrms-3ba41f75e2fdf64c",
+  "propensity_by_position": [
+    1.0,
+    1.234,
+    0.998,
+    0.87,
+    0.822,
+    0.813,
+    0.778,
+    0.612,
+    0.643,
+    0.611,
+    0.605,
+    0.478,
+    0.469,
+    0.451,
+    0.303,
+    0.313,
+    0.465,
+    0.372,
+    0.336,
+    0.281,
+    0.293,
+    0.358,
+    0.278,
+    0.487,
+    0.425,
+    0.404
+  ],
+  "targets": {
+    "public_affairs": {
+      "target_share": 0.082,
+      "candidate_share": 0.08180769785209745
+    },
+    "environment": {
+      "target_share": 0.048,
+      "candidate_share": 0.047763202152707705
+    }
+  },
+  "rankings": {
+    "Random": {
+      "NDCG@10": 0.30906061700334997,
+      "Recall@20": 0.7778431486500285,
+      "IPS-NDCG@10": 0.2713458777517709,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "exposure_public_affairs": 0.0823102794613514,
+      "exposure_environment": 0.04928572303302608
+    },
+    "Topic popularity": {
+      "NDCG@10": 0.3238115399205403,
+      "Recall@20": 0.7981878327277138,
+      "IPS-NDCG@10": 0.3028657792274985,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "exposure_public_affairs": 0.06802705685007825,
+      "exposure_environment": 0
+    },
+    "Logistic regression": {
+      "NDCG@10": 0.40978582164901023,
+      "Recall@20": 0.8518382547531411,
+      "IPS-NDCG@10": 0.35117404680541764,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "exposure_public_affairs": 0.04337971316164327,
+      "exposure_environment": 0.08304994969821153
+    },
+    "Neural (NRMS-style)": {
+      "NDCG@10": 0.3896887366927119,
+      "Recall@20": 0.8341549690002488,
+      "IPS-NDCG@10": 0.3528434697474412,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "exposure_public_affairs": 0.06387258208715355,
+      "exposure_environment": 0.13144232392078462
+    },
+    "Neural + SCRUF-D (lambda 0.25)": {
+      "NDCG@10": 0.3853775730050196,
+      "Recall@20": 0.8341248303625152,
+      "IPS-NDCG@10": 0.34862183477117653,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "exposure_public_affairs": 0.0878873918856126,
+      "exposure_environment": 0.12755957375781987
+    }
+  },
+  "lambda_sweep": {
+    "0.0": {
+      "NDCG@10": 0.3896887366927119,
+      "Recall@20": 0.8341549690002488,
+      "IPS-NDCG@10": 0.3528434697474412,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "exposure_public_affairs": 0.06387258208715355,
+      "exposure_environment": 0.13144232392078462
+    },
+    "0.1": {
+      "NDCG@10": 0.38776044846990493,
+      "Recall@20": 0.8337857706880124,
+      "IPS-NDCG@10": 0.3510759140755671,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "exposure_public_affairs": 0.08560055850699186,
+      "exposure_environment": 0.12989916149709269
+    },
+    "0.25": {
+      "NDCG@10": 0.3853775730050196,
+      "Recall@20": 0.8341248303625152,
+      "IPS-NDCG@10": 0.34862183477117653,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "exposure_public_affairs": 0.0878873918856126,
+      "exposure_environment": 0.12755957375781987
+    },
+    "0.5": {
+      "NDCG@10": 0.3848906138111258,
+      "Recall@20": 0.8340419491087478,
+      "IPS-NDCG@10": 0.3480907199979551,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "exposure_public_affairs": 0.08912619958255565,
+      "exposure_environment": 0.12805157523076927
+    },
+    "1.0": {
+      "NDCG@10": 0.3853400530473195,
+      "Recall@20": 0.8341549690002488,
+      "IPS-NDCG@10": 0.3484927651798909,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "exposure_public_affairs": 0.08913694564104725,
+      "exposure_environment": 0.12806627470221363
+    }
+  },
+  "examples": [
+    "EQfRgdjHyJevdNFxe_20231130022647",
+    "WLpfLj9JBfDbSX7cq_20231201073017",
+    "HFFRYweymwCWoJKM6_20231202023014"
+  ]
+}

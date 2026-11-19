@@ -31,6 +31,27 @@ def build_reranker(config: dict[str, Any], **overrides: Any) -> ScrufDReranker:
     return ScrufDReranker(agents, state=ExposureState(window=settings.pop("window")), **settings)
 
 
+def attach_metadata(feeds: list[dict[str, Any]], articles_path: str | Path,
+                    fields: tuple[str, ...] = ("topic", "outlet")) -> list[dict[str, Any]]:
+    """Add catalogue fields (topic, outlet...) to every candidate, by article_id."""
+    catalogue = load_json(articles_path)
+    if isinstance(catalogue, dict):
+        catalogue = catalogue.get("articles", [])
+    by_id = {a["article_id"]: a for a in catalogue}
+    missing = 0
+    for feed in feeds:
+        for cand in feed["candidates"]:
+            meta = by_id.get(cand["article_id"])
+            if meta is None:
+                missing += 1
+                continue
+            for f in fields:
+                cand.setdefault(f, meta.get(f))
+    if missing:
+        raise ValueError(f"{missing} candidates are missing from the article catalogue")
+    return feeds
+
+
 def load_feeds(path: str | Path) -> list[dict[str, Any]]:
     """Accept {"feeds": [...]}, a list of feeds, or flat {"predictions": [...]} rows.
 

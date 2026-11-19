@@ -1,0 +1,30 @@
+{
+  "note": "Public RSS feeds of IDEA's outlets. 'outlet' must match IDEA's outlet names so that outlet affinity transfers; 'topic' forces the coarse topic of every item (leave it out to infer it from the items' <category> tags). A failing feed is skipped.",
+  "sources": [
+    {"outlet": "BBC", "topic": "uk_news", "url": "https://feeds.bbci.co.uk/news/uk/rss.xml"},
+    {"outlet": "BBC", "topic": "politics", "url": "https://feeds.bbci.co.uk/news/politics/rss.xml"},
+    {"outlet": "BBC", "topic": "world", "url": "https://feeds.bbci.co.uk/news/world/rss.xml"},
+    {"outlet": "BBC", "topic": "business", "url": "https://feeds.bbci.co.uk/news/business/rss.xml"},
+    {"outlet": "BBC", "topic": "environment", "url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml"},
+    {"outlet": "BBC", "topic": "tech_science", "url": "https://feeds.bbci.co.uk/news/technology/rss.xml"},
+    {"outlet": "BBC", "topic": "health", "url": "https://feeds.bbci.co.uk/news/health/rss.xml"},
+    {"outlet": "BBC", "topic": "culture", "url": "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml"},
+    {"outlet": "BBC", "topic": "sport", "url": "https://feeds.bbci.co.uk/sport/rss.xml"},
+    {"outlet": "GuardianInt", "topic": "politics", "url": "https://www.theguardian.com/politics/rss"},
+    {"outlet": "GuardianInt", "topic": "world", "url": "https://www.theguardian.com/world/rss"},
+    {"outlet": "GuardianInt", "topic": "environment", "url": "https://www.theguardian.com/environment/rss"},
+    {"outlet": "GuardianInt", "topic": "business", "url": "https://www.theguardian.com/business/rss"},
+    {"outlet": "GuardianInt", "topic": "culture", "url": "https://www.theguardian.com/culture/rss"},
+    {"outlet": "GuardianInt", "topic": "lifestyle", "url": "https://www.theguardian.com/lifeandstyle/rss"},
+    {"outlet": "GuardianInt", "topic": "sport", "url": "https://www.theguardian.com/sport/rss"},
+    {"outlet": "GuardianInt", "topic": "opinion", "url": "https://www.theguardian.com/commentisfree/rss"},
+    {"outlet": "SkyNews", "topic": "uk_news", "url": "https://feeds.skynews.com/feeds/rss/uk.xml"},
+    {"outlet": "SkyNews", "topic": "politics", "url": "https://feeds.skynews.com/feeds/rss/politics.xml"},
+    {"outlet": "SkyNews", "topic": "world", "url": "https://feeds.skynews.com/feeds/rss/world.xml"},
+    {"outlet": "SkyNews", "topic": "business", "url": "https://feeds.skynews.com/feeds/rss/business.xml"},
+    {"outlet": "Independent", "url": "https://www.independent.co.uk/news/uk/rss"},
+    {"outlet": "Independent", "topic": "politics", "url": "https://www.independent.co.uk/news/uk/politics/rss"},
+    {"outlet": "EveningStandard", "url": "https://www.standard.co.uk/rss"},
+    {"outlet": "INews", "url": "https://inews.co.uk/feed"}
+  ]
+}

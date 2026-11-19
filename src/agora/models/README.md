@@ -1,18 +1,32 @@
 # models
 Owner: Ronald.
 
-Content representations, relevance scoring, training and prediction.
+Content representations, relevance models, training and prediction.
 
-## Model
-Logistic regression over three point-in-time features per (reader, candidate): content similarity to the reader's training-history profile, topic affinity, and training popularity. It is trained epoch by epoch (full-batch Adam, L2 scaled like scikit-learn's `C`). Training and validation log loss are recorded at every epoch; the epoch with the lowest validation loss is kept (early stopping, `--patience`). Validation labels serve only for this curve and model selection; test labels are never read.
+## Neural recommender (served by the API) — `neural.py`
+NRMS-style news recommender (Wu et al., EMNLP 2019), in PyTorch:
+- **News encoder:** the article's text vector (`embeddings.py`), projected, plus learned topic and outlet embeddings.
+- **User encoder:** multi-head self-attention over the reader's last 50 reads before the feed, then additive attention pooling into one user vector.
+- **Click predictor (Wide & Deep):** a linear part over six point-in-time signals (content similarity, topic affinity, freshness, outlet affinity, topic popularity, outlet popularity) plus an MLP over the user-article interaction. The deep part starts at zero and only adds what improves validation loss.
+- **Position-bias tower (PAL, Guo et al., RecSys 2019):** in IDEA readers mostly read what was displayed at the top. A learned per-position term is added to the logit in training only and dropped at recommendation, so the network learns relevance rather than the old display order.
+- **Training:** listwise softmax loss per feed (as NRMS), AdamW, epoch by epoch, early stopping on validation loss; seed 42.
+- **New articles:** it scores articles from their text, topic and outlet, so today's RSS articles can be recommended without retraining (`live.py`, `embeddings.load_text_encoder`).
+
+Article-level popularity is not given to the network: none of the validation or test candidates was read during training (they are new articles), so popularity is taken at topic and outlet level.
+
+## Logistic baseline — `relevance.py`
+Logistic regression on content similarity, topic affinity and article popularity, trained epoch by epoch with early stopping.
+
+## Text vectors — `embeddings.py`
+TF-IDF (1–2 grams) reduced to 256 dimensions by truncated SVD (default, offline). The fitted encoder is saved (`embeddings.npz.encoder.joblib`) to encode new articles identically. `--backend sentence-transformer` uses `all-MiniLM-L6-v2` instead (needs Hugging Face access).
 
 ## Commands
 ```
 python -m agora.models encode --articles <articles> --output artifacts/models/embeddings.npz
-python -m agora.models train --config configs/experiment.toml --articles <articles> --reads <reads_train.csv> --embeddings artifacts/models/embeddings.npz --model artifacts/models/model.json --feeds <feeds_train.jsonl> --labels <train_labels.json> --validation-feeds <feeds_validation.jsonl> --validation-labels <validation_labels.json> --report artifacts/models/training_report.json --curves reports/week3/loss_curves.png
-python -m agora.models predict ... --split validation --output <predictions.json>   # --ranking model|popularity|random|content
-python -m agora.models freeze --model artifacts/models/model.json --validation-note "<selected settings>"
-python -m agora.models predict ... --split test --output <predictions.json>         # requires the freeze
+python -m agora.models train-neural --config configs/experiment.toml --articles <articles> --reads <reads_train.csv> --embeddings artifacts/models/embeddings.npz --model artifacts/models/neural.pt --feeds <feeds_train.jsonl> --labels <train_labels.json> --validation-feeds <feeds_validation.jsonl> --validation-labels <validation_labels.json> --report artifacts/models/neural_report.json --curves reports/week3/neural_loss_curves.png
+python -m agora.models train ... --model artifacts/models/model.json ...     # logistic baseline, same options
+python -m agora.models predict ... --model <model.json|neural.pt> --split validation --output <predictions.json>
+python -m agora.models freeze --model <model> --validation-note "<selected settings>"
+python -m agora.models predict ... --split test --output <predictions.json>   # requires the freeze
 ```
-`training_report.json` holds the full per-epoch history, the best epoch and the prevalence-baseline log loss.
-Synthetic end-to-end check: `python examples/smoke.py` (writes `artifacts/ronald_smoke/loss_curves.png`).
+`--no-position-debias` trains the neural model without the position tower (ablation). `python -m agora.build` runs encode and both trainings. Synthetic end-to-end check: `python examples/smoke.py`.

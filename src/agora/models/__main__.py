@@ -101,22 +101,75 @@ def train(args):
     print(json.dumps(summary, indent=2))
 
 
-def predict(args):
-    config, builder, binding, _ = load_context(args)
-    model, payload = RelevanceModel.load(args.model)
+def train_neural(args):
+    from .neural import NeuralConfig, NeuralRecommender, build_examples
+    config, builder, binding, encoder = load_context(args)
+    feeds = load_feeds(args.feeds)
+    train, skipped = build_examples(builder, feeds, 'train', _load_labels(args.labels),
+                                    max_history=args.max_history, strict=True)
+    if not train:
+        raise ValueError('No training feeds with nonempty prior history')
+    validation = None
+    if args.validation_feeds:
+        validation, _ = build_examples(builder, load_feeds(args.validation_feeds), 'validation',
+                                       _load_labels(args.validation_labels),
+                                       max_history=args.max_history)
+    cfg = NeuralConfig(epochs=args.epochs, patience=args.patience, max_history=args.max_history,
+                       hidden=args.hidden, learning_rate=args.learning_rate, seed=config['seed'],
+                       dropout=args.dropout, weight_decay=args.weight_decay, loss=args.loss,
+                       position_debias=not args.no_position_debias)
+    model = NeuralRecommender(builder, cfg)
+    report = model.fit(train, validation)
+    report.update({'synthetic': config.get('synthetic', False), 'feeds_received': len(feeds),
+                   'feeds_skipped_empty_history': skipped['empty_history'], 'encoder': encoder,
+                   'training_labels_sha256': file_hash(args.labels)})
+    if args.validation_labels:
+        report['validation_labels_sha256'] = file_hash(args.validation_labels)
+    output = Path(args.model)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    report['model_version'] = model.save(output, {'binding': binding})
+    write_json(args.report, report)
+    if args.curves:
+        report['title'] = 'NRMS-style neural recommender: training and validation loss'
+        print(plot_loss_curves(report, args.curves))
+    print(json.dumps({k: v for k, v in report.items() if k != 'history'}, indent=2))
+
+
+def _load_predictor(args, builder, binding):
+    """Return (predictor, payload) for a logistic (.json) or neural (.pt) model."""
+    if str(args.model).endswith('.pt'):
+        from .neural import NeuralFeedPredictor, NeuralRecommender
+        model, payload = NeuralRecommender.load(args.model, builder)
+        predictor = NeuralFeedPredictor(builder, model)
+    else:
+        model, payload = RelevanceModel.load(args.model)
+        predictor = FeedPredictor(builder, model)
     if payload['metadata']['binding'] != binding:
         raise ValueError('Model inputs changed; use the same config, histories and embedding cache')
+    return predictor, payload
+
+
+def predict(args):
+    config, builder, binding, _ = load_context(args)
+    predictor, payload = _load_predictor(args, builder, binding)
     if args.split == 'test':
         freeze_path = Path(str(args.model) + '.frozen.json')
         freeze = json.loads(freeze_path.read_text(encoding='utf-8'))
         if freeze['model_sha256'] != file_hash(args.model):
             raise ValueError('Frozen model does not match the current model')
-    predictor = FeedPredictor(builder, model)
     feeds = load_feeds(args.feeds)
     feeds.sort(key=lambda f: (pd.Timestamp(f['generated_at']), f['user_id'], f['feed_id']))
     predictions = []
+    neural_scores = {}
+    if args.ranking == 'model' and hasattr(predictor.model, 'score'):
+        from .neural import build_examples  # batch scoring is much faster for the network
+        examples, _ = build_examples(builder, feeds, args.split, max_history=predictor.model.cfg.max_history)
+        neural_scores = {e['feed_id']: s for e, s in zip(examples, predictor.model.score(examples))}
     for feed in feeds:
-        if args.ranking == 'model':
+        if args.ranking == 'model' and feed['feed_id'] in neural_scores:
+            rows = rank_candidates(feed['user_id'], feed['feed_id'], feed['candidates'],
+                                   neural_scores[feed['feed_id']])
+        elif args.ranking == 'model':
             rows = predictor.predict_feed(feed['user_id'], feed['feed_id'],
                        feed['generated_at'], feed['candidates'], args.split)
         else:
@@ -148,22 +201,38 @@ def main():
     encode = commands.add_parser('encode')
     encode.add_argument('--articles', required=True)
     encode.add_argument('--output', required=True)
-    encode.add_argument('--backend', choices=['sentence-transformer', 'hashing'], default='sentence-transformer')
+    encode.add_argument('--backend', choices=['tfidf', 'sentence-transformer', 'hashing'], default='tfidf')
     encode.add_argument('--encoder', default='sentence-transformers/all-MiniLM-L6-v2')
     encode.add_argument('--revision', help='Pin the encoder commit for the final experiment')
-    for name in ('train', 'predict'):
+    for name in ('train', 'train-neural', 'predict'):
         sub = commands.add_parser(name)
         for option in ('config', 'articles', 'reads', 'embeddings', 'feeds', 'model'):
             sub.add_argument('--' + option, required=True)
-        if name == 'train':
+        if name == 'train-neural':
+            sub.add_argument('--labels', required=True)
+            sub.add_argument('--report', required=True)
+            sub.add_argument('--validation-feeds')
+            sub.add_argument('--validation-labels')
+            sub.add_argument('--epochs', type=int, default=60)
+            sub.add_argument('--patience', type=int, default=8)
+            sub.add_argument('--max-history', type=int, default=50)
+            sub.add_argument('--hidden', type=int, default=64)
+            sub.add_argument('--learning-rate', type=float, default=1e-4)
+            sub.add_argument('--dropout', type=float, default=0.3)
+            sub.add_argument('--weight-decay', type=float, default=1e-3)
+            sub.add_argument('--loss', choices=['listwise', 'pointwise'], default='listwise')
+            sub.add_argument('--no-position-debias', action='store_true',
+                             help='Ablation: train without the position-bias tower')
+            sub.add_argument('--curves')
+        elif name == 'train':
             sub.add_argument('--labels', required=True)
             sub.add_argument('--report', required=True)
             sub.add_argument('--C', type=float, default=1.0)
             sub.add_argument('--validation-feeds', help='Validation feeds for the loss curve and early stopping')
             sub.add_argument('--validation-labels', help='Validation labels (never test labels)')
-            sub.add_argument('--epochs', type=int, default=300)
+            sub.add_argument('--epochs', type=int, default=1500)
             sub.add_argument('--learning-rate', type=float, default=0.05)
-            sub.add_argument('--patience', type=int, default=30)
+            sub.add_argument('--patience', type=int, default=50)
             sub.add_argument('--curves', help='Output PNG of training/validation log loss per epoch')
         else:
             sub.add_argument('--split', choices=['validation', 'test'], required=True)
@@ -180,12 +249,17 @@ def main():
         print(json.dumps(result, indent=2))
     elif args.command == 'train':
         train(args)
+    elif args.command == 'train-neural':
+        train_neural(args)
     elif args.command == 'predict':
         predict(args)
     else:
         if not args.validation_note.strip():
             raise ValueError('Supply a validation selection note')
-        RelevanceModel.load(args.model)
+        if not str(args.model).endswith('.pt'):
+            RelevanceModel.load(args.model)
+        elif not Path(args.model).exists():
+            raise ValueError(f'Model not found: {args.model}')
         write_json(str(args.model) + '.frozen.json', {'model_sha256': file_hash(args.model),
                    'validation_note': args.validation_note})
         print('Model frozen for final test prediction')

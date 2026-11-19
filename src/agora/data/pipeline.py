@@ -20,8 +20,10 @@ import pandas as pd
 FEED_COLS = {"feed_id": "feed_id", "user_id": "user_id",
              "ts": "generated_at", "candidates": "candidates"}
 READ_COLS = {"user_id": "user_id", "article_id": "article_id", "ts": "read_at"}
-SOURCE_TZ = "UTC"   # fuseau appliqué aux timestamps bruts SANS fuseau
-PERIOD_TZ = "UTC"   # fuseau dans lequel les dates du plan sont exprimées
+# IDEA : heure d'Europe centrale (UTC+1 en nov.-déc. 2023), mesurée contre
+# views.json (epoch UTC) ; voir src/agora/data/idea.py.
+SOURCE_TZ = "Europe/Amsterdam"   # fuseau appliqué aux timestamps bruts SANS fuseau
+PERIOD_TZ = "Europe/Amsterdam"   # fuseau dans lequel les dates du plan sont exprimées
 SPLITS = {"train": ("2023-11-23", "2023-11-30"),
           "validation": ("2023-11-30", "2023-12-03"),
           "test": ("2023-12-03", "2023-12-08")}
@@ -149,13 +151,16 @@ def build_labels(f: pd.DataFrame, first_reads: pd.DataFrame) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------
-def run(feeds_path, reads_path, out_dir, sample_feeds=None):
+def run(feeds_path, reads_path, out_dir, sample_feeds=None, articles=None, provenance=None):
+    """feeds_path / reads_path : chemin de fichier ou DataFrame déjà chargé."""
     out = Path(out_dir); out.mkdir(parents=True, exist_ok=True)
     st = {"source_tz": SOURCE_TZ, "period_tz": PERIOD_TZ,
           "splits": {k: [str(a), str(b)] for k, (a, b) in BOUNDS.items()}}
 
-    reads = clean_reads(read_any(reads_path), st)
-    feeds = clean_feeds(read_any(feeds_path), st)
+    if provenance:
+        st["source"] = provenance
+    reads = clean_reads(reads_path if isinstance(reads_path, pd.DataFrame) else read_any(reads_path), st)
+    feeds = clean_feeds(feeds_path if isinstance(feeds_path, pd.DataFrame) else read_any(feeds_path), st)
 
     # Lecteurs éligibles : >= 5 articles distincts lus en train
     tr_a, tr_b = BOUNDS["train"]
@@ -216,6 +221,13 @@ def run(feeds_path, reads_path, out_dir, sample_feeds=None):
         ["feed_id", "user_id", "generated_at", "candidates"]
     ].to_json(out / "first_feed_sample.json", orient="records", indent=2)
 
+    if articles is not None:
+        # Catalogue partagé (Ronald, reranker, API) : sans aucune donnée d'interaction
+        articles.to_json(out / "articles.json", orient="records", force_ascii=False, indent=1)
+        st["articles_exported"] = len(articles)
+        st["candidates_missing_from_catalogue"] = int((~cand.article_id.isin(set(articles.article_id))).sum())
+        st["reads_missing_from_catalogue"] = int((~reads.article_id.isin(set(articles.article_id))).sum())
+
     json.dump(st, open(out / "cleaning_report.json", "w"), indent=2, default=str)
     print(json.dumps(st, indent=2, default=str))
     return st
@@ -223,13 +235,21 @@ def run(feeds_path, reads_path, out_dir, sample_feeds=None):
 
 def main():
     p = argparse.ArgumentParser(description="AGORA data pipeline V1")
-    p.add_argument("--feeds", required=True)
-    p.add_argument("--reads", required=True)
+    p.add_argument("--idea-dir", help="Dossier des fichiers bruts IDEA (articles/interactions/recommendations.json)")
+    p.add_argument("--feeds", help="Feeds génériques (si pas --idea-dir)")
+    p.add_argument("--reads", help="Lectures génériques (si pas --idea-dir)")
     p.add_argument("--out", default="data/processed")
     p.add_argument("--sample-feeds", type=int, default=None,
                    help="N feeds par split (test rapide)")
     a = p.parse_args()
-    run(a.feeds, a.reads, a.out, a.sample_feeds)
+    if a.idea_dir:
+        from .idea import load_idea
+        feeds, reads, articles, info = load_idea(a.idea_dir)
+        run(feeds, reads, a.out, a.sample_feeds, articles=articles, provenance=info)
+    elif a.feeds and a.reads:
+        run(a.feeds, a.reads, a.out, a.sample_feeds)
+    else:
+        p.error("donner --idea-dir, ou --feeds et --reads")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 """Regression tests for the shared config and evaluation boundaries."""
+import re
 import tempfile
 from pathlib import Path
 import unittest
@@ -14,7 +15,8 @@ class SharedIntegrationTests(unittest.TestCase):
         text = (ROOT / 'configs/experiment.toml').read_text()
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'experiment.toml'
-            path.write_text(text.replace('"UNVERIFIED"', f'"{timezone}"'))
+            text = re.sub(r'(?m)^source_timezone = ".*"$', f'source_timezone = "{timezone}"', text)
+            path.write_text(text)
             return load_model_config(path)
 
     def test_unverified_timezone_rejected(self):

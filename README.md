@@ -1,14 +1,8 @@
-
 # Agora
 
-Personalised news recommendation with diversity-aware reranking using the IDEA dataset.
+Personalised news recommendation with fairness-aware reranking, on the IDEA dataset.
 
-## Current status
-The repository contains the initial component scaffold, a first mock recommendation API and Evaluation V1.
-
-The API currently returns synthetic recommendations based on `examples/feed_input.json`. Evaluation V1 supports mock predictions with NDCG@10 and Recall@20. These examples are integration and evaluation inputs, not IDEA records or experimental results.
-
-SCRUF-D-inspired reranking V1 runs on synthetic relevance scores. Data processing and relevance scoring are still under development.
+A neural news recommender (NRMS-style: attention over each reader's reading history, trained on IDEA with a position-bias correction) scores articles for a reader. A SCRUF-D-inspired reranker (Aird et al., RecSys 2025) then reorders the list so that public-affairs news keeps a fair share of top-10 exposure. A FastAPI backend serves the result to a Streamlit interface, on IDEA's 2023 daily feeds or on today's articles fetched from the outlets' RSS feeds, and stores reader interactions in SQLite.
 
 ## Team and responsibilities
 
@@ -20,93 +14,106 @@ SCRUF-D-inspired reranking V1 runs on synthetic relevance scores. Data processin
 | Romain Cortyl | SCRUF-D-inspired reranking | `src/agora/reranking/` |
 | Mathis Groult | API, frontend and integration | `src/agora/api/`, `src/agora/frontend/` |
 
-## Setup
+## Run the system locally (about 10 minutes)
 
-Use Python 3.11 or newer.
+Python 3.11 or newer and Git are required. Commands are run from the repository root.
 
-From the repository root, on Windows CMD:
+**1. Clone and create the environment**
 
-```cmd
+Windows (CMD or PowerShell):
+```
+git clone https://github.com/Chancelor2023/agora-recsys.git
+cd agora-recsys
 py -3.11 -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
+.venv\Scripts\activate
+python -m pip install -r requirements.txt
+```
+macOS / Linux / Git Bash: same, with `python3 -m venv .venv` and `source .venv/bin/activate` (Git Bash on Windows: `source .venv/Scripts/activate`).
+
+**2. Download the IDEA dataset** (about 110 MB, public)
+```
+git clone --depth 1 https://github.com/Informfully/Datasets.git data/raw/Datasets
 ```
 
-If Python 3.11 is unavailable, use an installed newer version and replace `py -3.11` with the appropriate Python command.
+**3. Build the data, embeddings and models** (about two minutes)
+```
+python -m agora.build --idea-dir data/raw/Datasets/IDEA/dataset
+```
+This runs the data pipeline (`data/processed/`), encodes the articles, trains the logistic baseline and the neural recommender (`artifacts/models/`), and writes the loss curves to `reports/week3/`.
 
-## Running the recommendation API
+**Optional: fetch today's articles** (needs internet)
+```
+python -m agora.data.live
+```
+Writes `data/live/articles_live.json` from the RSS feeds listed in `configs/live_sources.json`. Run it again to refresh; the API picks up the new file without a restart.
 
-Start the development server from the repository root:
+**4. Start the API** (keep this terminal open)
+```
+python -m uvicorn agora.api.main:app
+```
+Check http://127.0.0.1:8000/mode: it must show `"is_mock": false`. Interactive documentation: http://127.0.0.1:8000/docs
 
-```cmd
-.venv\Scripts\python.exe -m uvicorn agora.api.main:app --reload
+**5. Start the interface** (second terminal, environment activated)
+```
+python -m streamlit run src/agora/frontend/app.py
+```
+Open http://localhost:8501, choose a reader, then "Today's news" (if fetched) or one of their IDEA daily feeds. "Read" sends a click to `/log_interaction`; the last stored events are shown at the bottom of the page (SQLite file `artifacts/agora.db`).
+
+## API endpoints
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health` | Health check |
+| `GET /mode` | Real or mock mode, model version |
+| `GET /users`, `GET /users/{user_id}/feeds` | Readers and their validation/test daily feeds |
+| `GET /recommend?user_id=...&feed_id=...` | Scored and reranked IDEA feed, with `latency_ms` |
+| `GET /live/status`, `GET /recommend_live?user_id=...` | Today's articles, scored for the reader and reranked |
+| `POST /log_interaction` | Store a `display` or `click` event in SQLite |
+| `GET /interactions?user_id=...` | Last stored events |
+
+Without `data/processed/` and `artifacts/models/` (or with `AGORA_MOCK=1`), the API falls back to the synthetic feed in `examples/feed_input.json` (`is_mock: true`).
+
+## Tests
+
+```
+python -m pytest
 ```
 
-Available endpoints:
+## Reproduce the results
 
-- `GET /health`: API health check.
-- `GET /recommend?user_id=demo-user&feed_id=demo-feed`: returns synthetic recommendations.
-
-Interactive API documentation is available at:
-
-`http://127.0.0.1:8000/docs`
-
-The recommendation endpoint currently uses the synthetic candidates from `examples/feed_input.json`. It sets `is_mock` to `true` and uses the model version `mock-v1`.
-
-## Running tests
-
-From the repository root:
-
-```cmd
-.venv\Scripts\python.exe -m pytest
 ```
+python -m agora.experiment --split validation
+```
+Writes `reports/week3/experiment_validation.md` (random, most-popular, logistic, neural and neural + SCRUF-D with NDCG@10, Recall@20, position-debiased IPS-NDCG@10 and topic exposure; lambda sweep; three reader examples) and the trade-off plot. The test split is run once, after `python -m agora.models freeze` on both models: `--split test`.
+
+## Retrain or re-run single components
+
+- Data pipeline: `python -m agora.data.pipeline --idea-dir data/raw/Datasets/IDEA/dataset --out data/processed` (see `src/agora/data/README.md`).
+- Models: `python -m agora.models train-neural ...` (neural), `train ...` (logistic), `predict`, `freeze` (see `src/agora/models/README.md`).
+- Reranking: `python -m agora.reranking --input <predictions.json> --articles data/processed/articles.json --output <reranked.json>`; `--lambda 0` is the ablation (see `src/agora/reranking/README.md`).
+- Evaluation: `python -m agora.evaluation --config configs/experiment.toml --predictions <predictions.json> --labels data/processed/validation_labels.json` (see `src/agora/evaluation/README.md`).
+
+Validation labels are used for model selection only; test predictions require a frozen model (`python -m agora.models freeze`), and the test split is evaluated once.
 
 ## Repository layout
 
-- `src/agora/`: importable application code, organised by component.
-- `configs/experiment.toml`: proposed shared experimental settings.
-- `data/README.md`: dataset acquisition and storage instructions.
-- `examples/`: synthetic shared inputs and separate evaluation labels.
-- `docs/interfaces.md`: proposed component interfaces.
-- `tests/`: targeted checks for implemented components.
-- `reports/week2/`, `reports/week3/`: report preparation and evidence links.
-- `artifacts/`: local generated models and embeddings, ignored by Git.
+- `src/agora/`: application code by component; `src/agora/build.py` rebuilds every local artifact.
+- `configs/experiment.toml`: shared temporal split, timezone and evaluation settings.
+- `configs/reranking_agents.json`: fairness agents, targets and lambda.
+- `data/README.md`: dataset acquisition, timestamps and pipeline outputs.
+- `docs/`: component interfaces and the temporal protocol.
+- `examples/`: synthetic inputs used by tests and smoke runs.
+- `reports/week2/`, `reports/week3/`: report evidence.
+- `data/raw/`, `data/processed/`, `artifacts/`: local data and generated files, ignored by Git.
 
 ## Dataset
 
-IDEA — Informfully Dataset with Enhanced Attributes.
-
-Source: https://github.com/Informfully/Datasets/tree/main/IDEA
-
-See `data/README.md`. Do not commit raw participant records.
+IDEA — Informfully Dataset with Enhanced Attributes. Source: https://github.com/Informfully/Datasets/tree/main/IDEA. Do not commit raw participant records.
 
 ## Development workflow
 
-Read `CONTRIBUTING.md`. Start each task from an up-to-date `main`, work on a branch such as `jerry/evaluation-v1`, and open a pull request with a runnable example.
-
-Agree on `docs/interfaces.md` before integrating the components.
-
-## Running the system and evaluation
-
-Evaluation V1 is available. After setup, run:
-
-`python -m agora.evaluation --predictions examples/mock_predictions.json --labels examples/mock_labels.json --output artifacts/evaluation/mock_metrics.json`
-
-Run verification with:
-
-`python -m unittest discover -s tests -v`
-
-See `src/agora/evaluation/README.md` for formats and hand-calculated expectations. Other components are pending. Mock outputs are not trained predictions.
-
-The recommendation API is available through the Uvicorn command documented above.
-
-Reranking V1 is available:
-
-python -m agora.reranking --input examples/reranking_mock_input.json --config configs/reranking_agents.json --output artifacts/reranking/mock_predictions.json
-
-Add --lambda 0 for the relevance-only ablation. See src/agora/reranking/README.md.
+Read `CONTRIBUTING.md`. Start each task from an up-to-date `main`, work on a branch, and open a pull request with a runnable example.
 
 ## Research reference
 
-Aird et al. (RecSys 2025), Integrating Individual and Group Fairness for Recommender Systems through Social Choice.
-
-https://doi.org/10.1145/3705328.3748087
+Aird et al. (RecSys 2025), Integrating Individual and Group Fairness for Recommender Systems through Social Choice. https://doi.org/10.1145/3705328.3748087

@@ -22,11 +22,12 @@ def plot_loss_curves(report, output):
         ax.plot(epochs, validation, label='validation', color='#ff7f0e')
         ax.axvline(report['best_epoch'], color='grey', linestyle='--', linewidth=1,
                    label=f"best epoch ({report['best_epoch']})")
+    listwise = report.get('loss') == 'listwise'
     ax.axhline(report['prevalence_baseline_log_loss'], color='#1f77b4', linestyle=':', linewidth=1,
-               label='train prevalence baseline')
+               label='uniform-ranking baseline (train)' if listwise else 'train prevalence baseline')
     ax.set_xlabel('epoch')
-    ax.set_ylabel('log loss')
-    title = 'Relevance model: training and validation log loss'
+    ax.set_ylabel('listwise cross-entropy per feed' if listwise else 'log loss')
+    title = report.get('title', 'Relevance model: training and validation log loss')
     if report.get('synthetic'):
         title += ' (synthetic data)'
     ax.set_title(title)
