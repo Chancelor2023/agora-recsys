@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:media="http://search.yahoo.com/mrss/" version="2.0">
+<channel>
+<title>World news | The Guardian</title>
+<item>
+<title>Climate talks enter final day with deal on adaptation finance in reach</title>
+<link>https://www.theguardian.com/environment/2026/nov/19/example-climate-talks</link>
+<description>&lt;p&gt;Negotiators work through the night on a &lt;a href="x"&gt;text&lt;/a&gt; for vulnerable countries.&lt;/p&gt;</description>
+<category domain="https://www.theguardian.com/environment/climate-crisis">Climate crisis</category>
+<category domain="https://www.theguardian.com/world/world">World news</category>
+<pubDate>Thu, 19 Nov 2026 08:30:12 GMT</pubDate>
+<dc:creator>Example Reporter</dc:creator>
+<media:content width="140" url="https://i.guim.co.uk/example.jpg"/>
+</item>
+<item>
+<title>Opposition leader calls for early election</title>
+<link>https://www.theguardian.com/politics/2026/nov/19/example-election</link>
+<description>&lt;p&gt;Calls grow after the government loses a key vote.&lt;/p&gt;</description>
+<category domain="https://www.theguardian.com/politics/politics">Politics</category>
+<pubDate>Thu, 19 Nov 2026 06:05:00 GMT</pubDate>
+</item>
+</channel>
+</rss>

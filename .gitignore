@@ -222,6 +222,7 @@ __marimo__/
 # Agora local datasets and generated artifacts
 /data/raw/
 /data/processed/
+/data/live/
 /artifacts/*
 !/artifacts/README.md
 *.sqlite

@@ -20,8 +20,11 @@ import pandas as pd
 FEED_COLS = {"feed_id": "feed_id", "user_id": "user_id",
              "ts": "generated_at", "candidates": "candidates"}
 READ_COLS = {"user_id": "user_id", "article_id": "article_id", "ts": "read_at"}
-SOURCE_TZ = "UTC"   # fuseau appliqué aux timestamps bruts SANS fuseau
-PERIOD_TZ = "UTC"   # fuseau dans lequel les dates du plan sont exprimées
+# IDEA : heure d'Europe centrale, UTC+1 sur toute l'expérience (23 nov.-8 déc. 2023,
+# aucun changement d'heure), mesurée contre views.json (epoch UTC) :
+# python -m agora.data.verify_timezone --idea-dir data/raw/Datasets/IDEA/dataset
+SOURCE_TZ = "Europe/Amsterdam"   # fuseau appliqué aux timestamps bruts SANS fuseau
+PERIOD_TZ = "Europe/Amsterdam"   # fuseau dans lequel les dates du plan sont exprimées
 SPLITS = {"train": ("2023-11-23", "2023-11-30"),
           "validation": ("2023-11-30", "2023-12-03"),
           "test": ("2023-12-03", "2023-12-08")}
@@ -85,6 +88,7 @@ def assign_split(ts: pd.Series) -> pd.Series:
 def clean_reads(raw: pd.DataFrame, st: dict) -> pd.DataFrame:
     r = raw.rename(columns={v: k for k, v in READ_COLS.items()})[list(READ_COLS)]
     st["reads_raw"] = len(r)
+    st["reads_missing_values"] = {c: int(r[c].isna().sum()) for c in r.columns}
     r = r.dropna(subset=["user_id", "article_id", "ts"])
     st["reads_after_dropna"] = len(r)
     r["user_id"], r["article_id"] = norm_id(r.user_id), norm_id(r.article_id)
@@ -99,6 +103,7 @@ def clean_reads(raw: pd.DataFrame, st: dict) -> pd.DataFrame:
 def clean_feeds(raw: pd.DataFrame, st: dict) -> pd.DataFrame:
     f = raw.rename(columns={v: k for k, v in FEED_COLS.items()})[list(FEED_COLS)]
     st["feeds_raw"] = len(f)
+    st["feeds_missing_values"] = {c: int(f[c].isna().sum()) for c in f.columns}
     f = f.dropna(subset=["feed_id", "user_id", "ts"])
     f["feed_id"], f["user_id"] = norm_id(f.feed_id), norm_id(f.user_id)
     f["ts"] = to_utc(f["ts"])
@@ -149,13 +154,16 @@ def build_labels(f: pd.DataFrame, first_reads: pd.DataFrame) -> pd.DataFrame:
 
 
 # --------------------------------------------------------------------------
-def run(feeds_path, reads_path, out_dir, sample_feeds=None):
+def run(feeds_path, reads_path, out_dir, sample_feeds=None, articles=None, provenance=None):
+    """feeds_path / reads_path : chemin de fichier ou DataFrame déjà chargé."""
     out = Path(out_dir); out.mkdir(parents=True, exist_ok=True)
     st = {"source_tz": SOURCE_TZ, "period_tz": PERIOD_TZ,
           "splits": {k: [str(a), str(b)] for k, (a, b) in BOUNDS.items()}}
 
-    reads = clean_reads(read_any(reads_path), st)
-    feeds = clean_feeds(read_any(feeds_path), st)
+    if provenance:
+        st["source"] = provenance
+    reads = clean_reads(reads_path if isinstance(reads_path, pd.DataFrame) else read_any(reads_path), st)
+    feeds = clean_feeds(feeds_path if isinstance(feeds_path, pd.DataFrame) else read_any(feeds_path), st)
 
     # Lecteurs éligibles : >= 5 articles distincts lus en train
     tr_a, tr_b = BOUNDS["train"]
@@ -184,6 +192,26 @@ def run(feeds_path, reads_path, out_dir, sample_feeds=None):
     st["candidates_never_read_by_anyone"] = int((~cand.article_id.isin(known)).sum())
     cand_ids = set(cand.article_id)
     st["reads_articles_never_candidate"] = int((~reads.article_id.isin(cand_ids)).sum())
+
+    # Lectures hors de la période de l'expérience (ignorées pour les profils et les labels)
+    start, end = BOUNDS["train"][0], max(b for _, b in BOUNDS.values())
+    st["reads_outside_experiment"] = int(((reads.ts < start) | (reads.ts >= end)).sum())
+
+    if articles is not None:
+        # Échec bloquant : tout candidat et toute lecture doivent exister dans le catalogue
+        catalogue = set(articles.article_id)
+        missing_cand = sorted(set(cand.article_id) - catalogue)
+        missing_reads = sorted(set(reads.article_id) - catalogue)
+        st["candidates_missing_from_catalogue"] = len(missing_cand)
+        st["reads_missing_from_catalogue"] = len(missing_reads)
+        if missing_cand or missing_reads:
+            raise SystemExit(f"Catalogue incomplet : {len(missing_cand)} candidats et "
+                             f"{len(missing_reads)} articles lus absents de articles.json "
+                             f"(ex. {(missing_cand + missing_reads)[:5]}). Rien n'a été exporté.")
+        st["articles_invalid_published_at"] = int(articles.published_at.isna().sum()
+                                                  + (articles.published_at == "").sum())
+        st["articles_missing_values"] = {c: int((articles[c].isna() | (articles[c] == "")).sum())
+                                         for c in ("title", "lead", "topic", "outlet")}
 
     # -------- Exports --------
     # Entrées du modèle (SANS labels, SANS lectures val/test)
@@ -216,6 +244,15 @@ def run(feeds_path, reads_path, out_dir, sample_feeds=None):
         ["feed_id", "user_id", "generated_at", "candidates"]
     ].to_json(out / "first_feed_sample.json", orient="records", indent=2)
 
+    if articles is not None:
+        # Catalogue partagé (Ronald, reranker, API) : sans aucune donnée d'interaction
+        articles.to_json(out / "articles.json", orient="records", force_ascii=False, indent=1)
+        st["articles_exported"] = len(articles)
+
+    # Lecteurs éligibles sans feed dans un split (ex. test : 531 lecteurs sur 558)
+    for split in SPLITS:
+        st[split]["eligible_users_without_feed"] = len(eligible) - st[split]["users"]
+
     json.dump(st, open(out / "cleaning_report.json", "w"), indent=2, default=str)
     print(json.dumps(st, indent=2, default=str))
     return st
@@ -223,13 +260,21 @@ def run(feeds_path, reads_path, out_dir, sample_feeds=None):
 
 def main():
     p = argparse.ArgumentParser(description="AGORA data pipeline V1")
-    p.add_argument("--feeds", required=True)
-    p.add_argument("--reads", required=True)
+    p.add_argument("--idea-dir", help="Dossier des fichiers bruts IDEA (articles/interactions/recommendations.json)")
+    p.add_argument("--feeds", help="Feeds génériques (si pas --idea-dir)")
+    p.add_argument("--reads", help="Lectures génériques (si pas --idea-dir)")
     p.add_argument("--out", default="data/processed")
     p.add_argument("--sample-feeds", type=int, default=None,
                    help="N feeds par split (test rapide)")
     a = p.parse_args()
-    run(a.feeds, a.reads, a.out, a.sample_feeds)
+    if a.idea_dir:
+        from .idea import load_idea
+        feeds, reads, articles, info = load_idea(a.idea_dir)
+        run(feeds, reads, a.out, a.sample_feeds, articles=articles, provenance=info)
+    elif a.feeds and a.reads:
+        run(a.feeds, a.reads, a.out, a.sample_feeds)
+    else:
+        p.error("donner --idea-dir, ou --feeds et --reads")
 
 
 if __name__ == "__main__":
