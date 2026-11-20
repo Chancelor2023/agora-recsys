@@ -123,6 +123,11 @@ class RelevanceModel:
                   'epochs_run': len(history),
                   'best_epoch': best[2] if validation is not None else len(history),
                   'early_stopped': validation is not None and len(history) < epochs,
+                  # 'converged': stopped because the monitored loss improved by less than
+                  # min_delta for `patience` epochs, even if the last epoch is the best one.
+                  'stop_reason': ('max_epochs' if len(history) == epochs else
+                                  f'converged: improvement < {min_delta} for {patience} epochs'
+                                  + ('' if best[2] < len(history) else ' (last epoch is the best)')),
                   'optimizer': 'full-batch Adam', 'learning_rate': learning_rate,
                   'patience': patience, 'C': regularization, 'feature_names': FEATURE_NAMES,
                   'history': history}

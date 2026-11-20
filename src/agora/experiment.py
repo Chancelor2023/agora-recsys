@@ -9,6 +9,10 @@ IPS-NDCG@10 (position-debiased), and top-10 exposure of each protected topic
 versus its share of the candidates. Also a lambda sweep, the accuracy/fairness
 trade-off plot and three reader examples before/after reranking.
 Writes reports/week3/experiment_<split>.{json,md} and tradeoff_<split>.png.
+
+On the test split: the frozen manifest must verify (python -m agora.freeze verify),
+only lambda in {0, selected} is computed, --lambdas is refused, and a first result is
+never overwritten (a re-run needs --rerun-reason, writes a new file and is logged).
 """
 from __future__ import annotations
 
@@ -29,9 +33,20 @@ from agora.models.relevance import FeedPredictor, RelevanceModel, rank_candidate
 from agora.reranking.io import build_reranker
 from agora.reranking.state import position_weight
 
+# Closed list of rows reported on the test split (frozen in the manifest).
+# Order and names follow docs/test_protocol.md, section 3.
+TEST_ROWS = ["Random", "Most popular (article)", "Topic popularity", "Logistic regression",
+             "Neural (NRMS-style)", "Neural + SCRUF-D"]
+VALIDATION_LAMBDAS = [0.0, 0.1, 0.25, 0.5, 1.0]
+
 
 def _rows(path):
     return read_records(path, "labels")
+
+
+def _uniform(seed, feed_id, article_id):
+    """Deterministic number in [0, 1) for one (feed, article)."""
+    return random.Random(int(hashlib.sha256(f"{seed}:{feed_id}:{article_id}".encode()).hexdigest(), 16)).random()
 
 
 def _ranking(feed, scores):
@@ -54,6 +69,45 @@ def _check_frozen(model_path):
         raise SystemExit(f"{model_path} is not frozen: run python -m agora.models freeze first")
 
 
+def _start_test_run(args):
+    """Check the freeze, refuse --lambdas and overwrites, log the run."""
+    from datetime import datetime, timezone
+    from agora.freeze import manifest_path, run_log_path, sha256, verify
+
+    if args.lambdas:
+        raise SystemExit("--lambdas is refused on the test split: only 0 and the frozen lambda run")
+    problems = verify(args.data, args.models, args.config, args.rerank_config)
+    if problems:
+        raise SystemExit("Frozen state check failed, test not run:\n- " + "\n- ".join(problems))
+    out = Path(args.out)
+    log = run_log_path(args.models)
+    lines = log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+    previous = [r for r in map(json.loads, lines) if r["status"] == "started"]
+    stem = "experiment_test"
+    if previous or (out / f"{stem}.json").exists():
+        if not args.rerun_reason:
+            raise SystemExit("A test run already exists. A re-run needs --rerun-reason (evaluator bug or "
+                             "failed run with no result); it is logged and both runs are published.")
+        stem = f"experiment_test_run{len(previous) + 1}"
+    record = {"run": len(previous) + 1, "started_at": datetime.now(timezone.utc).isoformat(),
+              "manifest_sha256": sha256(manifest_path(args.models)), "log": str(log), "reason": args.rerun_reason,
+              "stem": stem, "status": "started"}
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record) + "\n")
+    return record
+
+
+def _finish_test_run(record, result_path):
+    from datetime import datetime, timezone
+    from agora.freeze import sha256
+
+    done = {**record, "status": "finished", "finished_at": datetime.now(timezone.utc).isoformat(),
+            "result": str(result_path), "result_sha256": sha256(result_path)}
+    with Path(record["log"]).open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(done) + "\n")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--split", choices=["validation", "test"], default="validation")
@@ -62,7 +116,10 @@ def main(argv=None):
     parser.add_argument("--config", default="configs/experiment.toml")
     parser.add_argument("--rerank-config", default="configs/reranking_agents.json")
     parser.add_argument("--out", default="reports/week3")
-    parser.add_argument("--lambdas", default="0,0.1,0.25,0.5,1")
+    parser.add_argument("--lambdas", default=None,
+                        help="Validation only: comma-separated sweep (default 0,0.1,0.25,0.5,1)")
+    parser.add_argument("--rerun-reason", default=None,
+                        help="Test only: why a second test run is allowed (evaluator bug, failed run)")
     args = parser.parse_args(argv)
 
     from agora.models.__main__ import load_context
@@ -72,7 +129,9 @@ def main(argv=None):
     ctx = argparse.Namespace(config=args.config, articles=str(d / "articles.json"),
                              reads=str(d / "reads_train.csv"), embeddings=str(m / "embeddings.npz"))
     config, builder, _, _ = load_context(ctx)
+    run_record = None
     if split == "test":
+        run_record = _start_test_run(args)
         _check_frozen(m / "model.json")
         _check_frozen(m / "neural.pt")
     feeds = load_feeds(d / f"feeds_{split}.jsonl")
@@ -85,12 +144,19 @@ def main(argv=None):
 
     # --- base rankings ------------------------------------------------------
     rankings = {}
-    rankings["Random"] = [r for f in feeds for r in _ranking(f, [
-        random.Random(int(hashlib.sha256(f"42:{f['feed_id']}:{a}".encode()).hexdigest(), 16)).random()
-        for a in f["candidates"]])]
+    rankings["Random"] = [r for f in feeds for r in _ranking(
+        f, [_uniform(42, f["feed_id"], a) for a in f["candidates"]])]
+    # Article-level popularity: no candidate was read in training, so every score is 0 and the
+    # order is the article-ID tie-break ("oldest first"). Reported as such, see the protocol.
+    train_reads = builder.reads[builder.reads.ts < builder.protocol.train_end].article_id.value_counts()
+    rankings["Most popular (article)"] = [r for f in feeds for r in _ranking(
+        f, [float(train_reads.get(a, 0)) for a in f["candidates"]])]
+    # Topic popularity with a seeded random tie-break between articles of the same topic
+    # (1e-9 is far below the gap between two topic shares).
     topic_pop, _ = _group_popularity(builder, builder.protocol.train_end)
     rankings["Topic popularity"] = [r for f in feeds for r in _ranking(
-        f, [topic_pop.get(topic_of[a], 0.0) for a in f["candidates"]])]
+        f, [topic_pop.get(topic_of[a], 0.0) + 1e-9 * _uniform("tie-42", f["feed_id"], a)
+            for a in f["candidates"]])]
     logistic, _ = RelevanceModel.load(m / "model.json")
     predictor = FeedPredictor(builder, logistic)
     rankings["Logistic regression"] = [r for f in feeds for r in predictor.predict_feed(
@@ -106,7 +172,12 @@ def main(argv=None):
     for row in rankings["Neural (NRMS-style)"]:
         by_feed.setdefault(row["feed_id"], []).append(row)
     sweep = {}
-    for lam in [float(x) for x in args.lambdas.split(",")]:
+    chosen = float(rerank_config.get("lambda", 0.25))
+    if split == "test":
+        lambdas = sorted({0.0, chosen})  # ablation and the frozen choice, nothing else
+    else:
+        lambdas = [float(x) for x in args.lambdas.split(",")] if args.lambdas else VALIDATION_LAMBDAS
+    for lam in lambdas:
         reranker = build_reranker(rerank_config, lam=lam)  # its own exposure state
         reranked = []
         for f in feeds:
@@ -115,8 +186,8 @@ def main(argv=None):
             result = reranker.rerank({"user_id": f["user_id"], "feed_id": f["feed_id"], "candidates": cands})
             reranked += [{**p, "relevance_score": p["relevance_score"]} for p in result.predictions()]
         sweep[lam] = reranked
-    chosen = float(rerank_config.get("lambda", 0.25))
-    rankings[f"Neural + SCRUF-D (lambda {chosen:g})"] = sweep[chosen]
+    rankings["Neural + SCRUF-D"] = sweep[chosen]
+    assert list(rankings) == TEST_ROWS
 
     # --- metrics -----------------------------------------------------------
     agents = rerank_config["agents"]
@@ -130,7 +201,8 @@ def main(argv=None):
         exposure = _exposure(preds, topic_of)
         out = {"NDCG@10": result["metrics"]["NDCG@10"], "Recall@20": result["metrics"]["Recall@20"],
                "IPS-NDCG@10": ips_ndcg(preds, labels, feeds, propensity),
-               "evaluated_feeds": result["evaluated_feeds"], "total_feeds": result["total_feeds"]}
+               "evaluated_feeds": result["evaluated_feeds"], "total_feeds": result["total_feeds"],
+               "excluded_zero_positive_feeds": result["excluded_zero_positive_feeds"]}
         for agent in agents:
             topics = set(agent["protected_values"])
             out[f"exposure_{agent['name']}"] = sum(v for t, v in exposure.items() if t in topics)
@@ -199,14 +271,21 @@ def main(argv=None):
 
     # --- outputs -----------------------------------------------------------
     out = Path(args.out)
+    stem = run_record["stem"] if run_record else f"experiment_{split}"
     out.mkdir(parents=True, exist_ok=True)
     report = {"split": split, "feeds": len(feeds), "neural_model": payload["model_version"],
+              "lambda_selected": chosen, "lambdas": lambdas,
+              "manifest_sha256": run_record["manifest_sha256"] if run_record else None,
               "propensity_by_position": [round(p, 3) for p in propensity],
               "targets": targets, "rankings": table, "lambda_sweep": sweep_table, "examples": picked}
-    (out / f"experiment_{split}.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (out / f"{stem}.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     fmt = lambda v: "—" if v is None else f"{v:.4f}"  # noqa: E731
     names = [a["name"] for a in agents]
+    first = next(iter(table.values()))
     md = [f"# Experiment on the {split} split ({len(feeds)} feeds)", "",
+          f"Evaluated feeds: {first['evaluated_feeds']} of {first['total_feeds']} "
+          f"({first['excluded_zero_positive_feeds']} excluded: no read in the attribution window). "
+          f"Neural + SCRUF-D uses lambda {chosen:g}.", "",
           "Generated by `python -m agora.experiment --split " + split + "`. "
           "IPS-NDCG weights each read by 1 / P(seen | displayed position) (propensities from the training split). "
           "Top-10 overlap: mean Jaccard overlap of the top 10 between readers who received the same candidates "
@@ -226,7 +305,7 @@ def main(argv=None):
         md.append(f"| {lam:g} | {fmt(row['NDCG@10'])} | {fmt(row['IPS-NDCG@10'])} | "
                   + " | ".join(f"{row['exposure_' + n]:.3f}" for n in names) + " |")
     md += ["", f"![Trade-off](tradeoff_{split}.png)", "", "## Three readers before / after SCRUF-D", ""] + examples_md
-    (out / f"experiment_{split}.md").write_text("\n".join(md) + "\n", encoding="utf-8")
+    (out / f"{stem}.md").write_text("\n".join(md) + "\n", encoding="utf-8")
 
     try:
         import matplotlib
@@ -256,7 +335,9 @@ def main(argv=None):
     except ImportError:
         pass
     print("\n".join(md[:7 + len(table)]))
-    print(f"\nSaved {out}/experiment_{split}.md, .json and tradeoff_{split}.png")
+    if run_record:
+        _finish_test_run(run_record, out / f"{stem}.json")
+    print(f"\nSaved {out}/{stem}.md, .json and tradeoff_{split}.png")
 
 
 if __name__ == "__main__":

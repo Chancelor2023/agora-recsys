@@ -3,10 +3,11 @@
     python -m agora.build --idea-dir data/raw/Datasets/IDEA/dataset
 
 1. data pipeline  -> data/processed/ (feeds, train reads, separate labels, articles)
-2. encode         -> artifacts/models/embeddings.npz (+ saved TF-IDF/SVD encoder)
+2. encode         -> artifacts/models/embeddings.npz (+ saved TF-IDF/SVD encoder, fitted on
+                    articles published before the end of training only)
 3. train          -> artifacts/models/model.json (logistic baseline) + loss curves
 4. train-neural   -> artifacts/models/neural.pt (NRMS-style network, served by the API) + loss curves
-Test labels are never read. Takes about two minutes on a laptop.
+Test labels are never read. Takes 3 to 6 minutes on a laptop.
 Optional, needs internet: python -m agora.data.live  (today's articles for the live mode)
 """
 import argparse
@@ -33,7 +34,7 @@ def main(argv=None):
     d, m = args.data, args.models
     step("1/4 data pipeline", "agora.data.pipeline", "--idea-dir", args.idea_dir, "--out", d)
     step("2/4 article embeddings", "agora.models", "encode", "--articles", f"{d}/articles.json",
-         "--output", f"{m}/embeddings.npz")
+         "--output", f"{m}/embeddings.npz", "--config", "configs/experiment.toml")
     step("3/4 logistic baseline training", "agora.models", "train", "--config", "configs/experiment.toml",
          "--articles", f"{d}/articles.json", "--reads", f"{d}/reads_train.csv",
          "--embeddings", f"{m}/embeddings.npz", "--model", f"{m}/model.json",

@@ -3,8 +3,9 @@
 [protocol]
 version = "temporal-v1"
 agreement = "team_confirmed"
-# Verified 2023-11-19 against views.json epoch timestamps: IDEA text timestamps are
-# Central European Time (UTC+1 in Nov-Dec 2023). See src/agora/data/idea.py.
+# Verified on 19 Nov 2026 against views.json epoch timestamps: IDEA text timestamps are
+# Central European Time, UTC+1 throughout the experiment (23 Nov-8 Dec 2023, no clock
+# change). Reproduce: python -m agora.data.verify_timezone --idea-dir <IDEA/dataset>
 source_timezone = "Europe/Amsterdam"
 [dataset]
 name = "IDEA"

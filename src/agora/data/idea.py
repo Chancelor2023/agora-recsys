@@ -128,6 +128,11 @@ def load_idea(raw_dir: str | Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataF
                             ascending=[True, True, False], kind="stable")
     stamp = recs.createdAt.str.replace(r"[^0-9]", "", regex=True)
     recs["feed_id"] = recs.informfully_id + "_" + stamp
+    # feed_id keeps only the timestamp digits: two different createdAt values with the
+    # same digits would be merged into one feed by the groupby below, so it is an error.
+    clash = recs.groupby("feed_id").createdAt.nunique()
+    if clash.gt(1).any():
+        raise ValueError(f"feed_id collision: {clash[clash.gt(1)].index.tolist()[:5]}")
     feeds = (recs.groupby("feed_id", sort=False)
              .agg(user_id=("informfully_id", "first"), generated_at=("createdAt", "first"),
                   candidates=("articleId", list), algorithm=("recommendationAlgorithm", "first"),

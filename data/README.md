@@ -11,7 +11,7 @@ python -m agora.data.pipeline --idea-dir data/raw/Datasets/IDEA/dataset --out da
 `data/raw/` and `data/processed/` are ignored by Git. Do not upload participant-level records.
 
 ## Timestamps
-IDEA's text timestamps were written by the official R script with `as.POSIXct()` and no explicit timezone. Compared with `views.json` (raw epoch milliseconds, UTC), interaction timestamps are exactly one hour ahead of UTC for 34,338 of 34,871 matched reads: Central European Time, UTC+1 in Nov–Dec 2023. `source_timezone = "Europe/Amsterdam"` in `configs/experiment.toml`; split boundaries are local midnights in that zone. The first read in the data is 23 Nov 2023 00:00:09 local time, the experiment start.
+IDEA's text timestamps were written by the official R script with `as.POSIXct()` and no explicit timezone. Compared with `views.json` (raw epoch milliseconds, UTC), interaction timestamps are one hour ahead of UTC (rounded to the hour) for 34,763 of 34,871 matched reads (99.7%): Central European Time, UTC+1 throughout Nov–Dec 2023, with no clock change. Reproduce with `python -m agora.data.verify_timezone --idea-dir data/raw/Datasets/IDEA/dataset`. `source_timezone = "Europe/Amsterdam"` in `configs/experiment.toml`; split boundaries are local midnights in that zone. The first read in the data is 23 Nov 2023 00:00:09 local time, the experiment start.
 
 ## Mapping to the pipeline
 - Feed = all recommendation rows sharing (`informfully_id`, `createdAt`), candidates in served order (`prediction` descending); `feed_id` = `<user>_<timestamp>`.

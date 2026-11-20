@@ -205,6 +205,8 @@ def main():
     encode.add_argument('--backend', choices=['tfidf', 'sentence-transformer', 'hashing'], default='tfidf')
     encode.add_argument('--encoder', default='sentence-transformers/all-MiniLM-L6-v2')
     encode.add_argument('--revision', help='Pin the encoder commit for the final experiment')
+    encode.add_argument('--config', help='Fit TF-IDF/SVD only on articles published before the end of '
+                        'training (from this experiment config); recommended')
     for name in ('train', 'train-neural', 'predict'):
         sub = commands.add_parser(name)
         for option in ('config', 'articles', 'reads', 'embeddings', 'feeds', 'model'):
@@ -247,8 +249,9 @@ def main():
     freeze.add_argument('--validation-note', required=True, help='Reference to selected validation settings/results')
     args = parser.parse_args()
     if args.command == 'encode':
+        fit_before = load_model_config(args.config)['train_end'] if args.config else None
         result = encode_articles(load_articles(args.articles), Path(args.output),
-                                 args.backend, args.encoder, args.revision)
+                                 args.backend, args.encoder, args.revision, fit_before)
         print(json.dumps(result, indent=2))
     elif args.command == 'train':
         train(args)

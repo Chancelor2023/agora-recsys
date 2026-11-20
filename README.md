@@ -35,7 +35,7 @@ macOS / Linux / Git Bash: same, with `python3 -m venv .venv` and `source .venv/b
 git clone --depth 1 https://github.com/Informfully/Datasets.git data/raw/Datasets
 ```
 
-**3. Build the data, embeddings and models** (about two minutes)
+**3. Build the data, embeddings and models** (3 to 6 minutes depending on the machine; 147 s and 327 s measured)
 ```
 python -m agora.build --idea-dir data/raw/Datasets/IDEA/dataset
 ```
@@ -58,6 +58,16 @@ Check http://127.0.0.1:8000/mode: it must show `"is_mock": false`. Interactive d
 python -m streamlit run src/agora/frontend/app.py
 ```
 Open http://localhost:8501, choose a reader, then "Today's news" (if fetched) or one of their IDEA daily feeds. "Read" sends a click to `/log_interaction`; the last stored events are shown at the bottom of the page (SQLite file `artifacts/agora.db`).
+
+**Checks and test protocol** (optional)
+```
+python -m agora.data.verify_timezone --idea-dir data/raw/Datasets/IDEA/dataset
+python -m agora.experiment --split validation
+python -m agora.freeze create --note "why this state is frozen"
+python -m agora.freeze verify
+python -m agora.experiment --split test
+```
+`verify_timezone` checks that IDEA's text timestamps are UTC+1. The validation experiment writes `reports/week3/experiment_validation.*`. The test split runs only after `freeze create`, and only if `freeze verify` reports no difference; every test run is logged in `artifacts/freeze/test_runs.jsonl`, and a second run needs `--rerun-reason` (details: `reports/week3/evidence.md`, "Test protocol").
 
 ## API endpoints
 

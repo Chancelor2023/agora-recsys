@@ -6,6 +6,7 @@ from the IDEA source records and are never used as training or evaluation data.
 from __future__ import annotations
 
 import sqlite3
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -37,9 +38,12 @@ class InteractionStore:
         self.path = Path(path)
         if str(path) != ":memory:":
             self.path.parent.mkdir(parents=True, exist_ok=True)
+        # One connection shared by FastAPI's worker threads: every access is serialised.
+        self._lock = threading.Lock()
         self._conn = sqlite3.connect(str(path), check_same_thread=False)
-        self._conn.executescript(SCHEMA)
-        self._conn.commit()
+        with self._lock:
+            self._conn.executescript(SCHEMA)
+            self._conn.commit()
 
     def insert(self, event: dict[str, Any]) -> bool:
         """Store one event; return False if its event_id was already stored."""
@@ -48,12 +52,13 @@ class InteractionStore:
         row = dict(event)
         row.setdefault("received_at", datetime.now(timezone.utc).isoformat())
         row.setdefault("source", "agora-app")
-        cursor = self._conn.execute(
-            f"INSERT OR IGNORE INTO interactions ({', '.join(COLUMNS)}) "
-            f"VALUES ({', '.join('?' for _ in COLUMNS)})",
-            [row[c] for c in COLUMNS])
-        self._conn.commit()
-        return cursor.rowcount == 1
+        with self._lock:
+            cursor = self._conn.execute(
+                f"INSERT OR IGNORE INTO interactions ({', '.join(COLUMNS)}) "
+                f"VALUES ({', '.join('?' for _ in COLUMNS)})",
+                [row[c] for c in COLUMNS])
+            self._conn.commit()
+            return cursor.rowcount == 1
 
     def recent(self, user_id: str | None = None, limit: int = 20) -> list[dict[str, Any]]:
         query = f"SELECT {', '.join(COLUMNS)} FROM interactions"
@@ -63,7 +68,10 @@ class InteractionStore:
             params.append(user_id)
         query += " ORDER BY received_at DESC LIMIT ?"
         params.append(int(limit))
-        return [dict(zip(COLUMNS, r)) for r in self._conn.execute(query, params).fetchall()]
+        with self._lock:
+            rows = self._conn.execute(query, params).fetchall()
+        return [dict(zip(COLUMNS, r)) for r in rows]
 
     def count(self) -> int:
-        return int(self._conn.execute("SELECT COUNT(*) FROM interactions").fetchone()[0])
+        with self._lock:
+            return int(self._conn.execute("SELECT COUNT(*) FROM interactions").fetchone()[0])

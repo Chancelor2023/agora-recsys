@@ -5,9 +5,26 @@ import numpy as np
 from .io import records_hash, write_json
 
 
-def encode_articles(articles, output, backend='sentence-transformer', model_name=None, revision=None):
+def encode_articles(articles, output, backend='sentence-transformer', model_name=None, revision=None,
+                    fit_before=None):
+    """Encode every catalogue article; a fitted encoder only learns from the past.
+
+    ``fit_before`` (UTC timestamp, normally the end of training): TF-IDF and SVD are
+    fitted on articles published strictly before it, then applied to every article,
+    so that no vocabulary or topic direction comes from validation or test text.
+    """
+    import pandas as pd
     texts = (articles.title + '\n' + articles.lead).tolist()
     fitted = None
+    fit_mask = np.ones(len(articles), dtype=bool)
+    if fit_before is not None and backend == 'tfidf':
+        if 'published_at' not in articles:
+            raise ValueError('fit_before needs a published_at column in the article catalogue')
+        published = pd.to_datetime(articles.published_at, utc=True, errors='coerce')
+        fit_mask = (published < pd.Timestamp(fit_before)).to_numpy()
+        if fit_mask.sum() < 100:
+            raise ValueError(f'Only {int(fit_mask.sum())} articles published before {fit_before}')
+    fit_texts = [t for t, keep in zip(texts, fit_mask) if keep]
     if backend == 'sentence-transformer':
         from sentence_transformers import SentenceTransformer
         encoder = SentenceTransformer(model_name, revision=revision, device='cpu')
@@ -21,10 +38,10 @@ def encode_articles(articles, output, backend='sentence-transformer', model_name
         from sklearn.preprocessing import normalize
         tfidf = TfidfVectorizer(ngram_range=(1, 2), min_df=2, max_features=50000,
                                 sublinear_tf=True, stop_words='english')
-        matrix = tfidf.fit_transform(texts)
-        components = min(256, matrix.shape[1] - 1, matrix.shape[0] - 1)
-        svd = TruncatedSVD(components, random_state=42)
-        vectors = normalize(svd.fit_transform(matrix))
+        fit_matrix = tfidf.fit_transform(fit_texts)
+        components = min(256, fit_matrix.shape[1] - 1, fit_matrix.shape[0] - 1)
+        svd = TruncatedSVD(components, random_state=42).fit(fit_matrix)
+        vectors = normalize(svd.transform(tfidf.transform(texts)))
         fitted = (tfidf, svd)  # kept so that new articles can be encoded identically
     elif backend == 'hashing':
         from sklearn.feature_extraction.text import HashingVectorizer
@@ -36,7 +53,9 @@ def encode_articles(articles, output, backend='sentence-transformer', model_name
                                else 'TfidfVectorizer-1-2gram+TruncatedSVD-256' if backend == 'tfidf'
                                else 'HashingVectorizer-512'),
                 'revision': revision if backend == 'sentence-transformer' else None,
-                'catalogue_hash': records_hash(articles[['article_id', 'title', 'lead', 'topic']].to_dict('records'))}
+                'catalogue_hash': records_hash(articles[['article_id', 'title', 'lead', 'topic']].to_dict('records')),
+                'fit_before': str(fit_before) if fit_before is not None and backend == 'tfidf' else None,
+                'fit_articles': int(fit_mask.sum()) if backend == 'tfidf' else None}
     output.parent.mkdir(parents=True, exist_ok=True)
     with output.open('wb') as handle:
         np.savez_compressed(handle, ids=articles.article_id.to_numpy(dtype=str), vectors=vectors)

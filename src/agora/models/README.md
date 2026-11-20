@@ -20,7 +20,7 @@ Known limitation: lists are much less personal than the logistic baseline's (top
 Logistic regression on content similarity, topic affinity and article popularity, trained epoch by epoch with early stopping.
 
 ## Text vectors — `embeddings.py`
-TF-IDF (1–2 grams) reduced to 256 dimensions by truncated SVD (default, offline). The fitted encoder is saved (`embeddings.npz.encoder.joblib`) to encode new articles identically. `--backend sentence-transformer` uses `all-MiniLM-L6-v2` instead (needs Hugging Face access).
+TF-IDF (1–2 grams) reduced to 256 dimensions by truncated SVD (default, offline). With `--config`, as in `agora.build`, TF-IDF and SVD are fitted only on articles published before `train_end` (5,596 articles on IDEA), then applied to all articles, so validation and test text never shapes the vocabulary. The fitted encoder is saved (`embeddings.npz.encoder.joblib`) to encode new articles identically. `--backend sentence-transformer` uses `all-MiniLM-L6-v2` instead (needs Hugging Face access).
 
 ## Commands
 ```

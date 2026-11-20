@@ -20,8 +20,9 @@ import pandas as pd
 FEED_COLS = {"feed_id": "feed_id", "user_id": "user_id",
              "ts": "generated_at", "candidates": "candidates"}
 READ_COLS = {"user_id": "user_id", "article_id": "article_id", "ts": "read_at"}
-# IDEA : heure d'Europe centrale (UTC+1 en nov.-déc. 2023), mesurée contre
-# views.json (epoch UTC) ; voir src/agora/data/idea.py.
+# IDEA : heure d'Europe centrale, UTC+1 sur toute l'expérience (23 nov.-8 déc. 2023,
+# aucun changement d'heure), mesurée contre views.json (epoch UTC) :
+# python -m agora.data.verify_timezone --idea-dir data/raw/Datasets/IDEA/dataset
 SOURCE_TZ = "Europe/Amsterdam"   # fuseau appliqué aux timestamps bruts SANS fuseau
 PERIOD_TZ = "Europe/Amsterdam"   # fuseau dans lequel les dates du plan sont exprimées
 SPLITS = {"train": ("2023-11-23", "2023-11-30"),
@@ -87,6 +88,7 @@ def assign_split(ts: pd.Series) -> pd.Series:
 def clean_reads(raw: pd.DataFrame, st: dict) -> pd.DataFrame:
     r = raw.rename(columns={v: k for k, v in READ_COLS.items()})[list(READ_COLS)]
     st["reads_raw"] = len(r)
+    st["reads_missing_values"] = {c: int(r[c].isna().sum()) for c in r.columns}
     r = r.dropna(subset=["user_id", "article_id", "ts"])
     st["reads_after_dropna"] = len(r)
     r["user_id"], r["article_id"] = norm_id(r.user_id), norm_id(r.article_id)
@@ -101,6 +103,7 @@ def clean_reads(raw: pd.DataFrame, st: dict) -> pd.DataFrame:
 def clean_feeds(raw: pd.DataFrame, st: dict) -> pd.DataFrame:
     f = raw.rename(columns={v: k for k, v in FEED_COLS.items()})[list(FEED_COLS)]
     st["feeds_raw"] = len(f)
+    st["feeds_missing_values"] = {c: int(f[c].isna().sum()) for c in f.columns}
     f = f.dropna(subset=["feed_id", "user_id", "ts"])
     f["feed_id"], f["user_id"] = norm_id(f.feed_id), norm_id(f.user_id)
     f["ts"] = to_utc(f["ts"])
@@ -190,6 +193,26 @@ def run(feeds_path, reads_path, out_dir, sample_feeds=None, articles=None, prove
     cand_ids = set(cand.article_id)
     st["reads_articles_never_candidate"] = int((~reads.article_id.isin(cand_ids)).sum())
 
+    # Lectures hors de la période de l'expérience (ignorées pour les profils et les labels)
+    start, end = BOUNDS["train"][0], max(b for _, b in BOUNDS.values())
+    st["reads_outside_experiment"] = int(((reads.ts < start) | (reads.ts >= end)).sum())
+
+    if articles is not None:
+        # Échec bloquant : tout candidat et toute lecture doivent exister dans le catalogue
+        catalogue = set(articles.article_id)
+        missing_cand = sorted(set(cand.article_id) - catalogue)
+        missing_reads = sorted(set(reads.article_id) - catalogue)
+        st["candidates_missing_from_catalogue"] = len(missing_cand)
+        st["reads_missing_from_catalogue"] = len(missing_reads)
+        if missing_cand or missing_reads:
+            raise SystemExit(f"Catalogue incomplet : {len(missing_cand)} candidats et "
+                             f"{len(missing_reads)} articles lus absents de articles.json "
+                             f"(ex. {(missing_cand + missing_reads)[:5]}). Rien n'a été exporté.")
+        st["articles_invalid_published_at"] = int(articles.published_at.isna().sum()
+                                                  + (articles.published_at == "").sum())
+        st["articles_missing_values"] = {c: int((articles[c].isna() | (articles[c] == "")).sum())
+                                         for c in ("title", "lead", "topic", "outlet")}
+
     # -------- Exports --------
     # Entrées du modèle (SANS labels, SANS lectures val/test)
     reads_train.assign(ts=reads_train.ts.dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")) \
@@ -225,8 +248,10 @@ def run(feeds_path, reads_path, out_dir, sample_feeds=None, articles=None, prove
         # Catalogue partagé (Ronald, reranker, API) : sans aucune donnée d'interaction
         articles.to_json(out / "articles.json", orient="records", force_ascii=False, indent=1)
         st["articles_exported"] = len(articles)
-        st["candidates_missing_from_catalogue"] = int((~cand.article_id.isin(set(articles.article_id))).sum())
-        st["reads_missing_from_catalogue"] = int((~reads.article_id.isin(set(articles.article_id))).sum())
+
+    # Lecteurs éligibles sans feed dans un split (ex. test : 531 lecteurs sur 558)
+    for split in SPLITS:
+        st[split]["eligible_users_without_feed"] = len(eligible) - st[split]["users"]
 
     json.dump(st, open(out / "cleaning_report.json", "w"), indent=2, default=str)
     print(json.dumps(st, indent=2, default=str))

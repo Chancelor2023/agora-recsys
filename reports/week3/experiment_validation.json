@@ -1,7 +1,16 @@
 {
   "split": "validation",
   "feeds": 1620,
-  "neural_model": "nrms-8b9840b04adee342",
+  "neural_model": "nrms-8dd250d0620b523b",
+  "lambda_selected": 0.25,
+  "lambdas": [
+    0.0,
+    0.1,
+    0.25,
+    0.5,
+    1.0
+  ],
+  "manifest_sha256": null,
   "propensity_by_position": [
     1.0,
     1.234,
@@ -47,6 +56,7 @@
       "IPS-NDCG@10": 0.2713458777517709,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
+      "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.0823102794613514,
       "exposure_environment": 0.04928572303302608,
       "top10_overlap_same_candidates": 0.24608642951495519
@@ -57,91 +67,100 @@
       "IPS-NDCG@10": 0.3028657792274985,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
+      "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.06802705685007825,
       "exposure_environment": 0,
       "top10_overlap_same_candidates": 1.0
     },
     "Logistic regression": {
-      "NDCG@10": 0.40974423661640436,
-      "Recall@20": 0.8518382547531411,
-      "IPS-NDCG@10": 0.35108026097319794,
+      "NDCG@10": 0.4230839169911994,
+      "Recall@20": 0.8651996194813817,
+      "IPS-NDCG@10": 0.36525765176447644,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
-      "exposure_public_affairs": 0.04334639492616733,
-      "exposure_environment": 0.08305936791968035,
-      "top10_overlap_same_candidates": 0.4949432680714485
+      "excluded_zero_positive_feeds": 514,
+      "exposure_public_affairs": 0.052676217452631395,
+      "exposure_environment": 0.10762399595220698,
+      "top10_overlap_same_candidates": 0.42305620682190914
     },
     "Neural (NRMS-style)": {
-      "NDCG@10": 0.40532278319439635,
-      "Recall@20": 0.8368453806079298,
-      "IPS-NDCG@10": 0.359961010276037,
+      "NDCG@10": 0.41272936028343776,
+      "Recall@20": 0.8324017255087592,
+      "IPS-NDCG@10": 0.3674003474348786,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
-      "exposure_public_affairs": 0.0706735856067189,
-      "exposure_environment": 0.13799484148530555,
-      "top10_overlap_same_candidates": 0.8169725549035893
+      "excluded_zero_positive_feeds": 514,
+      "exposure_public_affairs": 0.05569830997642066,
+      "exposure_environment": 0.14009032522425893,
+      "top10_overlap_same_candidates": 0.8541776231431405
     },
-    "Neural + SCRUF-D (lambda 0.25)": {
-      "NDCG@10": 0.4005146225461983,
-      "Recall@20": 0.8368453806079298,
-      "IPS-NDCG@10": 0.35558785170908486,
+    "Neural + SCRUF-D": {
+      "NDCG@10": 0.40573154454954813,
+      "Recall@20": 0.8322887056172583,
+      "IPS-NDCG@10": 0.36076555164546903,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
-      "exposure_public_affairs": 0.09292626555870188,
-      "exposure_environment": 0.134184419069592,
-      "top10_overlap_same_candidates": 0.7970189452948074
+      "excluded_zero_positive_feeds": 514,
+      "exposure_public_affairs": 0.08876013250305087,
+      "exposure_environment": 0.13530162802472834,
+      "top10_overlap_same_candidates": 0.7881191605329536
     }
   },
   "lambda_sweep": {
     "0.0": {
-      "NDCG@10": 0.40532278319439635,
-      "Recall@20": 0.8368453806079298,
-      "IPS-NDCG@10": 0.359961010276037,
+      "NDCG@10": 0.41272936028343776,
+      "Recall@20": 0.8324017255087592,
+      "IPS-NDCG@10": 0.3674003474348786,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
-      "exposure_public_affairs": 0.0706735856067189,
-      "exposure_environment": 0.13799484148530555
+      "excluded_zero_positive_feeds": 514,
+      "exposure_public_affairs": 0.05569830997642066,
+      "exposure_environment": 0.14009032522425893
     },
     "0.1": {
-      "NDCG@10": 0.4038080932344461,
-      "Recall@20": 0.837749539739937,
-      "IPS-NDCG@10": 0.35811854274882465,
+      "NDCG@10": 0.4087263079873872,
+      "Recall@20": 0.8333058846407665,
+      "IPS-NDCG@10": 0.36286881132013876,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
-      "exposure_public_affairs": 0.09131914535000203,
-      "exposure_environment": 0.13724606245374207
+      "excluded_zero_positive_feeds": 514,
+      "exposure_public_affairs": 0.08647667921521056,
+      "exposure_environment": 0.139568526968346
     },
     "0.25": {
-      "NDCG@10": 0.4005146225461983,
-      "Recall@20": 0.8368453806079298,
-      "IPS-NDCG@10": 0.35558785170908486,
+      "NDCG@10": 0.40573154454954813,
+      "Recall@20": 0.8322887056172583,
+      "IPS-NDCG@10": 0.36076555164546903,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
-      "exposure_public_affairs": 0.09292626555870188,
-      "exposure_environment": 0.134184419069592
+      "excluded_zero_positive_feeds": 514,
+      "exposure_public_affairs": 0.08876013250305087,
+      "exposure_environment": 0.13530162802472834
     },
     "0.5": {
-      "NDCG@10": 0.399725139079694,
-      "Recall@20": 0.8368453806079298,
-      "IPS-NDCG@10": 0.35481716287682524,
+      "NDCG@10": 0.40534888363769866,
+      "Recall@20": 0.8318366260512547,
+      "IPS-NDCG@10": 0.36055935275986606,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
-      "exposure_public_affairs": 0.0946035063093231,
-      "exposure_environment": 0.13477322309576023
+      "excluded_zero_positive_feeds": 514,
+      "exposure_public_affairs": 0.09022186321719025,
+      "exposure_environment": 0.13579399070251336
     },
     "1.0": {
-      "NDCG@10": 0.399725139079694,
-      "Recall@20": 0.8368453806079298,
-      "IPS-NDCG@10": 0.35481716287682524,
+      "NDCG@10": 0.4052458459538234,
+      "Recall@20": 0.8318366260512547,
+      "IPS-NDCG@10": 0.3603997803444488,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
-      "exposure_public_affairs": 0.0946035063093231,
-      "exposure_environment": 0.13477322309576023
+      "excluded_zero_positive_feeds": 514,
+      "exposure_public_affairs": 0.09020979734762548,
+      "exposure_environment": 0.1357887359678735
     }
   },
   "examples": [
-    "2vSbi8uoJfvXm2Gqs_20231130022647",
+    "HNbfQJnQC25hbXWGz_20231130022647",
     "76eFE6GwTXKXPKiGw_20231202023014",
-    "899ypWet8PJ47F2Yg_20231201073016"
+    "P5tNedcF5SkrYjqAc_20231201073016"
   ]
 }

@@ -348,6 +348,9 @@ class NeuralRecommender:
                   'prevalence_baseline_log_loss': baseline,
                   'epochs_run': len(history), 'best_epoch': best[2],
                   'early_stopped': bool(validation) and len(history) < cfg.epochs,
+                  'stop_reason': ('max_epochs' if len(history) == cfg.epochs else
+                                  f'validation loss not improved by 1e-4 for {cfg.patience} epochs; '
+                                  f'weights of epoch {best[2]} kept'),
                   'training_log_loss': self._loss(train), 'history': history}
         if cfg.position_debias:
             bias = self.net.position_bias.weight.detach().squeeze(-1).numpy()
