@@ -61,16 +61,27 @@
       "exposure_environment": 0.04928572303302608,
       "top10_overlap_same_candidates": 0.24608642951495519
     },
+    "Most popular (article)": {
+      "NDCG@10": 0.40427662007100396,
+      "Recall@20": 0.8040003591090696,
+      "IPS-NDCG@10": 0.3066068859824923,
+      "evaluated_feeds": 1106,
+      "total_feeds": 1620,
+      "excluded_zero_positive_feeds": 514,
+      "exposure_public_affairs": 0.028298830656962298,
+      "exposure_environment": 0.23789897796398787,
+      "top10_overlap_same_candidates": 1.0
+    },
     "Topic popularity": {
-      "NDCG@10": 0.3238115399205403,
-      "Recall@20": 0.7981878327277138,
-      "IPS-NDCG@10": 0.3028657792274985,
+      "NDCG@10": 0.3251427168967988,
+      "Recall@20": 0.7904091972017502,
+      "IPS-NDCG@10": 0.3049403703528306,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.06802705685007825,
       "exposure_environment": 0,
-      "top10_overlap_same_candidates": 1.0
+      "top10_overlap_same_candidates": 0.9389759665621735
     },
     "Logistic regression": {
       "NDCG@10": 0.4230839169911994,
