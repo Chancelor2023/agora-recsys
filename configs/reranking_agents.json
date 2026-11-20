@@ -1,5 +1,5 @@
 {
-  "status": "IDEA coarse topics (src/agora/data/idea.py). target_share = the topic's share of validation candidates. Validation only, neural model (reports/week3/experiment_validation.md, sweep 0/0.1/0.25/0.5/1): lambda 0.25 brings politics top-10 exposure from 0.056 to 0.089 (target 0.082) for -0.008 NDCG@10; lambda 0.1 already gives 0.086. The environment agent does not act (exposure 0.140 > 0.048). Final lambda rule: team decision before the freeze.",
+  "status": "IDEA coarse topics (src/agora/data/idea.py). target_share = the topic's share of validation candidates. Validation only, neural model (reports/week3/experiment_validation.md, sweep 0/0.1/0.25/0.5/1): lambda 0.25 brings politics top-10 exposure from 0.056 to 0.089 (target 0.082) for -0.007 NDCG@10; lambda 0.1 already gives 0.086. The environment agent does not act (exposure 0.140 > 0.048). Final lambda rule: team decision before the freeze.",
   "lambda": 0.25,
   "k": 10,
   "window": 50,

@@ -5,10 +5,8 @@ the three splits, TF-IDF embeddings, logistic and neural models), frozen, then
 copied for every test. ``python -m agora.experiment --split test`` runs on the
 synthetic "test" split only: no IDEA data is read.
 
-Tests marked ``xfail(strict=True)`` describe safeguards that are NOT implemented
-yet: at commit b2f6342 the experiment accepts these changes after the freeze.
-When the freeze manifest lands, these tests start to pass; strict mode then turns
-them into failures (XPASS) as a reminder to delete the marker.
+The safeguards first written as ``xfail(strict=True)`` at commit b2f6342 are now
+enforced by the freeze manifest (``python -m agora.freeze``) and pass.
 
 If the freeze command or the experiment command changes, edit only ``freeze`` and
 ``run_experiment`` below.
@@ -29,7 +27,6 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 TOPICS = ["politics", "sport", "environment", "culture"]
 FAVOURITE = {"u1": "politics", "u2": "sport", "u3": "environment", "u4": "culture"}
-NOT_YET = pytest.mark.xfail(strict=True, reason="freeze safeguard not implemented at b2f6342")
 
 
 # --------------------------------------------------------------------------- #
@@ -42,6 +39,12 @@ def freeze(root):
                         "--model", str(root / "models" / model),
                         "--validation-note", "synthetic freeze-protocol test"],
                        check=True, capture_output=True)
+    subprocess.run([sys.executable, "-m", "agora.freeze", "create",
+                    "--note", "synthetic freeze-protocol test", "--idea-dir", str(root / "no-idea"),
+                    "--data", str(root / "data"), "--models", str(root / "models"),
+                    "--config", str(root / "configs" / "experiment.toml"),
+                    "--rerank-config", str(root / "configs" / "reranking_agents.json")],
+                   check=True, capture_output=True)
 
 
 def run_experiment(root, *extra):
@@ -179,7 +182,7 @@ def test_refuses_modified_model_file(run_dir):
 
 
 # --------------------------------------------------------------------------- #
-# Inputs changed after the freeze: must be refused (not implemented yet)
+# Inputs changed after the freeze: must be refused
 # --------------------------------------------------------------------------- #
 def _perturb_embeddings(root):
     path = root / "models" / "embeddings.npz"
@@ -236,7 +239,6 @@ TAMPERING = {
 }
 
 
-@NOT_YET
 @pytest.mark.parametrize("change", list(TAMPERING), ids=list(TAMPERING))
 def test_refuses_inputs_changed_after_freeze(run_dir, change):
     TAMPERING[change](run_dir)
@@ -244,27 +246,23 @@ def test_refuses_inputs_changed_after_freeze(run_dir, change):
 
 
 # --------------------------------------------------------------------------- #
-# Single declared test run (not implemented yet)
+# Single declared test run
 # --------------------------------------------------------------------------- #
-@NOT_YET
 def test_only_frozen_lambda_and_ablation_on_test(run_dir):
     chosen = json.loads((run_dir / "configs" / "reranking_agents.json").read_text())["lambda"]
     report = run_experiment(run_dir)
     assert {float(lam) for lam in report.get("lambda_sweep", {})} <= {0.0, float(chosen)}
 
 
-@NOT_YET
 def test_lambda_sweep_option_refused_on_test(run_dir):
     _refused(run_dir, "--lambdas", "0,0.1,0.25,0.5,1")
 
 
-@NOT_YET
 def test_second_test_run_does_not_overwrite_results(run_dir):
     run_experiment(run_dir)
     _refused(run_dir)
 
 
-@NOT_YET
 def test_exclusion_counts_reported_for_every_ranking(run_dir):
     report = run_experiment(run_dir)
     counts = {(row["total_feeds"], row["evaluated_feeds"], row["excluded_zero_positive_feeds"])

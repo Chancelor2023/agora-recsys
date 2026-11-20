@@ -38,7 +38,7 @@ Reader-independent signals (freshness, topic and outlet popularity) are left out
 | Random | 0.3091 | 0.7778 |
 | Most popular (article, training reads) | 0.4043 | 0.8040 |
 | Topic popularity (training, seeded random tie-break) | 0.3251 | 0.7904 |
-| Logistic regression | **0.4225** | **0.8652** |
+| Logistic regression | **0.4231** | **0.8652** |
 | Neural (NRMS-style) | 0.4127 | 0.8324 |
 
 Paired bootstrap as declared in `docs/test_protocol.md` (`python -m agora.evaluation.bootstrap`, 2,000 resamples of the 484 readers, a reader's feeds stay together, seed 42), 95% CI:
@@ -48,8 +48,8 @@ Paired bootstrap as declared in `docs/test_protocol.md` (`python -m agora.evalua
 | Neural − random | +0.104 [+0.087, +0.119] | +0.055 [+0.035, +0.072] |
 | Neural − most popular (article) | +0.009 [−0.009, +0.026] | +0.028 [+0.011, +0.046] |
 | Neural − topic popularity | +0.088 [+0.073, +0.102] | +0.042 [+0.023, +0.060] |
-| Logistic − most popular (article) | +0.018 [+0.000, +0.036] | +0.061 [+0.044, +0.078] |
-| Logistic − topic popularity | +0.097 [+0.079, +0.115] | +0.075 [+0.058, +0.094] |
+| Logistic − most popular (article) | +0.019 [+0.001, +0.037] | +0.061 [+0.044, +0.078] |
+| Logistic − topic popularity | +0.098 [+0.079, +0.115] | +0.075 [+0.058, +0.094] |
 | Neural − logistic | −0.010 [−0.026, +0.006] | **−0.033 [−0.048, −0.018]** |
 
 - Both models clearly beat random and topic popularity.
@@ -90,9 +90,9 @@ Own metric: position-weighted top-10 exposure of the protected topic (politics, 
 | | NDCG@10 | Recall@20 | Politics top-10 exposure |
 | --- | --- | --- | --- |
 | Ablation (lambda 0) | 0.4127 | 0.8324 | 0.056 |
-| SCRUF-D (lambda 0.25) | 0.4048 | 0.8323 | **0.089** (target 0.082 reached) |
+| SCRUF-D (lambda 0.25) | 0.4057 | 0.8323 | **0.089** (target 0.082 reached) |
 
-- Cost of the reranking: NDCG@10 −0.008, 95% CI [−0.011, −0.006] (same bootstrap as Q2); Recall@20 unchanged.
+- Cost of the reranking: NDCG@10 −0.007, 95% CI [−0.010, −0.005] (same bootstrap as Q2); Recall@20 unchanged.
 - Lambda sweep: lambda 0.1 already reaches the target (0.086); 0.25, 0.5 and 1 give 0.089–0.090. The rule for the final lambda is a team decision to take before the freeze.
 - The `environment` agent never acts on validation: the neural model already gives environment 0.140 of top-10 exposure, above its 0.048 target.
 - The logistic baseline gives politics only 0.053 of top-10 exposure.
@@ -123,9 +123,9 @@ Readers mostly read what the app displayed at the top: IDEA's original display o
 | Random | 0.2713 |
 | Most popular (article) | 0.3066 |
 | Topic popularity | 0.3049 |
-| Logistic regression | 0.3647 |
+| Logistic regression | 0.3653 |
 | Neural (NRMS-style) | 0.3674 |
-| Neural + SCRUF-D (lambda 0.25) | 0.3602 |
+| Neural + SCRUF-D (lambda 0.25) | 0.3608 |
 
 ## Pending
 - Team decisions before the freeze: final lambda rule, rows of the test table, neural vs logistic as the main model (D1–D9).
