@@ -1,7 +1,7 @@
 """Week 3 / final experiment: every ranking on one split, with the same evaluator.
 
     python -m agora.experiment --split validation
-    python -m agora.experiment --split test        # only after both models are frozen
+    python -m agora.experiment --split test        # only after python -m agora.freeze create
 
 Rankings: random, topic popularity (training reads), logistic baseline, neural
 (NRMS-style), neural + SCRUF-D. Metrics: NDCG@10 and Recall@20 (Jerry's harness),
@@ -38,6 +38,10 @@ from agora.reranking.state import position_weight
 TEST_ROWS = ["Random", "Most popular (article)", "Topic popularity", "Logistic regression",
              "Neural (NRMS-style)", "Neural + SCRUF-D"]
 VALIDATION_LAMBDAS = [0.0, 0.1, 0.25, 0.5, 1.0]
+# Declared comparisons (docs/test_protocol.md, section 5): A minus B, paired bootstrap over readers.
+COMPARISONS = [("Neural (NRMS-style)", "Random"), ("Neural (NRMS-style)", "Most popular (article)"),
+               ("Neural (NRMS-style)", "Topic popularity"), ("Neural (NRMS-style)", "Logistic regression"),
+               ("Neural + SCRUF-D", "Neural (NRMS-style)")]
 
 
 def _rows(path):
@@ -63,15 +67,9 @@ def _exposure(predictions, topic_of, k=10):
     return {t: v / total for t, v in exposure.items()}
 
 
-def _check_frozen(model_path):
-    freeze = Path(str(model_path) + ".frozen.json")
-    if not freeze.exists() or json.loads(freeze.read_text())["model_sha256"] != file_hash(model_path):
-        raise SystemExit(f"{model_path} is not frozen: run python -m agora.models freeze first")
-
-
-def _start_test_run(args):
-    """Check the freeze, refuse --lambdas and overwrites, log the run."""
-    from datetime import datetime, timezone
+def _preflight_test(args):
+    """Every check of a test run, before anything is logged: --lambdas refused, frozen state
+    intact (the manifest is the only freeze mechanism), no earlier run without --rerun-reason."""
     from agora.freeze import manifest_path, run_log_path, sha256, verify
 
     if args.lambdas:
@@ -89,13 +87,24 @@ def _start_test_run(args):
             raise SystemExit("A test run already exists. A re-run needs --rerun-reason (evaluator bug or "
                              "failed run with no result); it is logged and both runs are published.")
         stem = f"experiment_test_run{len(previous) + 1}"
-    record = {"run": len(previous) + 1, "started_at": datetime.now(timezone.utc).isoformat(),
-              "manifest_sha256": sha256(manifest_path(args.models)), "log": str(log), "reason": args.rerun_reason,
-              "stem": stem, "status": "started"}
+    return {"run": len(previous) + 1, "manifest_sha256": sha256(manifest_path(args.models)), "log": str(log),
+            "reason": args.rerun_reason, "stem": stem}
+
+
+def _log_test_start(plan):
+    """Log the run as started: called once every input is loaded, just before ranking."""
+    from datetime import datetime, timezone
+
+    record = {**plan, "started_at": datetime.now(timezone.utc).isoformat(), "status": "started"}
+    log = Path(record["log"])
     log.parent.mkdir(parents=True, exist_ok=True)
     with log.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record) + "\n")
     return record
+
+
+def _start_test_run(args):
+    return _log_test_start(_preflight_test(args))
 
 
 def _finish_test_run(record, result_path):
@@ -128,12 +137,9 @@ def main(argv=None):
     d, m, split = Path(args.data), Path(args.models), args.split
     ctx = argparse.Namespace(config=args.config, articles=str(d / "articles.json"),
                              reads=str(d / "reads_train.csv"), embeddings=str(m / "embeddings.npz"))
+    test_plan = _preflight_test(args) if split == "test" else None  # before loading anything
     config, builder, _, _ = load_context(ctx)
     run_record = None
-    if split == "test":
-        run_record = _start_test_run(args)
-        _check_frozen(m / "model.json")
-        _check_frozen(m / "neural.pt")
     feeds = load_feeds(d / f"feeds_{split}.jsonl")
     feeds.sort(key=lambda f: (pd.Timestamp(f["generated_at"]), f["user_id"], f["feed_id"]))
     labels = _rows(d / f"{split}_labels.json")
@@ -165,9 +171,12 @@ def main(argv=None):
     examples, _ = build_examples(builder, feeds, split, max_history=neural.cfg.max_history)
     scored = {e["feed_id"]: s for e, s in zip(examples, neural.score(examples))}
     rankings["Neural (NRMS-style)"] = [r for f in feeds for r in _ranking(f, scored[f["feed_id"]])]
+    rerank_config = json.loads(Path(args.rerank_config).read_text(encoding="utf-8"))
+    build_reranker(rerank_config, lam=0.0)  # a broken reranker config fails here, before the log
+    if test_plan:
+        run_record = _log_test_start(test_plan)  # all inputs loaded and scored: the run starts
 
     # --- SCRUF-D on top of the neural model, lambda sweep ---------------------
-    rerank_config = json.loads(Path(args.rerank_config).read_text(encoding="utf-8"))
     by_feed = {}
     for row in rankings["Neural (NRMS-style)"]:
         by_feed.setdefault(row["feed_id"], []).append(row)
@@ -191,13 +200,22 @@ def main(argv=None):
 
     # --- metrics -----------------------------------------------------------
     agents = rerank_config["agents"]
+    # Supplementary public-affairs metrics at 5 (docs/temporal_protocol.md): only reads of the
+    # first agent's protected topics count as relevant; feeds without such a read are excluded.
+    focus = agents[0]
+    focus_topics = set(focus["protected_values"])
+    focus_labels = [{**r, "label": int(r["label"] and topic_of[r["article_id"]] in focus_topics)} for r in labels]
     pool = Counter(topic_of[a] for f in feeds for a in f["candidates"])
     pool_share = {t: c / sum(pool.values()) for t, c in pool.items()}
 
-    def metrics(preds):
+    evaluated = {}
+
+    def metrics(preds, record=None):
         clean = [{k: v for k, v in r.items() if k in ("user_id", "feed_id", "article_id", "rank", "relevance_score")}
                  for r in preds]
         result = evaluate(clean, labels, 10, 20)
+        if record is not None:
+            evaluated[record] = result
         exposure = _exposure(preds, topic_of)
         out = {"NDCG@10": result["metrics"]["NDCG@10"], "Recall@20": result["metrics"]["Recall@20"],
                "IPS-NDCG@10": ips_ndcg(preds, labels, feeds, propensity),
@@ -206,6 +224,12 @@ def main(argv=None):
         for agent in agents:
             topics = set(agent["protected_values"])
             out[f"exposure_{agent['name']}"] = sum(v for t, v in exposure.items() if t in topics)
+        name = focus["name"]
+        at5 = evaluate(clean, focus_labels, 5, 5)
+        out[f"NDCG@5_{name}"] = at5["metrics"]["NDCG@5"]
+        out[f"Recall@5_{name}"] = at5["metrics"]["Recall@5"]
+        out[f"evaluated_feeds_{name}"] = at5["evaluated_feeds"]
+        out[f"exposure@5_{name}"] = sum(v for t, v in _exposure(preds, topic_of, k=5).items() if t in focus_topics)
         return out
 
     # Personalisation check: readers who received the same candidates should not all
@@ -225,7 +249,12 @@ def main(argv=None):
                  for g in groups for a, b in itertools.combinations(g, 2)]
         return sum(pairs) / len(pairs) if pairs else None
 
-    table = {name: metrics(preds) for name, preds in rankings.items()}
+    table = {name: metrics(preds, record=name) for name, preds in rankings.items()}
+    from agora.evaluation.bootstrap import paired_bootstrap
+    comparisons = [{"a": a, "b": b, **{metric: {k: v for k, v in paired_bootstrap(
+                        evaluated[a], evaluated[b], metric, unit="user", resamples=2000, seed=42).items()
+                        if k in ("difference_a_minus_b", "ci_low", "ci_high", "units")}
+                    for metric in ("NDCG@10", "Recall@20")}} for a, b in COMPARISONS]
     for name, preds in rankings.items():
         table[name]["top10_overlap_same_candidates"] = overlap(preds)
     sweep_table = {lam: metrics(preds) for lam, preds in sweep.items()}
@@ -277,7 +306,8 @@ def main(argv=None):
               "lambda_selected": chosen, "lambdas": lambdas,
               "manifest_sha256": run_record["manifest_sha256"] if run_record else None,
               "propensity_by_position": [round(p, 3) for p in propensity],
-              "targets": targets, "rankings": table, "lambda_sweep": sweep_table, "examples": picked}
+              "targets": targets, "rankings": table, "comparisons": comparisons,
+              "lambda_sweep": sweep_table, "examples": picked}
     (out / f"{stem}.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     fmt = lambda v: "—" if v is None else f"{v:.4f}"  # noqa: E731
     names = [a["name"] for a in agents]
@@ -296,6 +326,18 @@ def main(argv=None):
         md.append(f"| {name} | {fmt(row['NDCG@10'])} | {fmt(row['Recall@20'])} | {fmt(row['IPS-NDCG@10'])} | "
                   f"{fmt(row['top10_overlap_same_candidates'])} | "
                   + " | ".join(f"{row['exposure_' + n]:.3f}" for n in names) + " |")
+    fn = focus["name"]
+    md += ["", f"Supplementary {fn} metrics at 5 (only reads of {', '.join(sorted(focus_topics))} count as relevant; "
+           f"{first[f'evaluated_feeds_{fn}']} feeds with at least one such read):", "",
+           f"| Ranking | NDCG@5 {fn} | Recall@5 {fn} | Top-5 exposure {fn} |", "| --- | --- | --- | --- |"]
+    for name, row in table.items():
+        md.append(f"| {name} | {fmt(row[f'NDCG@5_{fn}'])} | {fmt(row[f'Recall@5_{fn}'])} | {row[f'exposure@5_{fn}']:.3f} |")
+    md += ["", "Declared comparisons (A − B; paired bootstrap over readers, 2,000 resamples, seed 42, 95% CI):", "",
+           "| A | B | NDCG@10 | Recall@20 |", "| --- | --- | --- | --- |"]
+    for c in comparisons:
+        md.append(f"| {c['a']} | {c['b']} | " + " | ".join(
+            f"{c[m]['difference_a_minus_b']:+.4f} [{c[m]['ci_low']:+.4f}, {c[m]['ci_high']:+.4f}]"
+            for m in ("NDCG@10", "Recall@20")) + " |")
     md += ["", "Targets: " + "; ".join(f"{n} {t['target_share']:.3f} (share of {split} candidates {t['candidate_share']:.3f})"
                                        for n, t in targets.items()) + ".", "",
            "## Lambda sweep (neural + SCRUF-D)", "",

@@ -54,9 +54,10 @@ def main():
     assert report['history'] and 'validation_log_loss' in report['history'][-1]
     run('predict', *shared, '--feeds', root / 'feeds_validation.json', '--split', 'validation',
         '--output', root / 'validation_predictions.json')
-    run('freeze', '--model', root / 'model.json', '--validation-note', 'Synthetic CLI smoke check only')
-    run('predict', *shared, '--feeds', root / 'feeds_test.json', '--split', 'test',
-        '--output', root / 'test_predictions.json')
+    refused = subprocess.run([sys.executable, '-m', 'agora.models', 'predict', *map(str, shared),
+                              '--feeds', str(root / 'feeds_test.json'), '--split', 'test',
+                              '--output', str(root / 'test_predictions.json')], capture_output=True)
+    assert refused.returncode != 0 and not (root / 'test_predictions.json').exists()
     predictions = json.loads((root / 'validation_predictions.json').read_text())['predictions']
     assert len(predictions) == 52
     for user in ('reader-a', 'reader-b'):
@@ -83,7 +84,7 @@ def main():
         result = evaluate(json.loads(output.read_text())['predictions'], truth)
         assert result['total_feeds'] == 2
     print('PASS: popularity, random and content baselines accepted by evaluation.')
-    print('PASS: synthetic training, reload, validation/test exports; 2 feeds x 26 candidates.')
+    print('PASS: synthetic training, reload, validation export; test predictions refused outside the declared test run.')
 
 
 if __name__ == '__main__':

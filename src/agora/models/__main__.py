@@ -154,10 +154,8 @@ def predict(args):
     config, builder, binding, _ = load_context(args)
     predictor, payload = _load_predictor(args, builder, binding)
     if args.split == 'test':
-        freeze_path = Path(str(args.model) + '.frozen.json')
-        freeze = json.loads(freeze_path.read_text(encoding='utf-8'))
-        if freeze['model_sha256'] != file_hash(args.model):
-            raise ValueError('Frozen model does not match the current model')
+        raise SystemExit('Test predictions come only from the declared test run: '
+                         'python -m agora.freeze create, then python -m agora.experiment --split test')
     feeds = load_feeds(args.feeds)
     feeds.sort(key=lambda f: (pd.Timestamp(f['generated_at']), f['user_id'], f['feed_id']))
     predictions = []
@@ -244,9 +242,6 @@ def main():
             sub.add_argument('--output', required=True)
             sub.add_argument('--ranking', choices=['model', 'popularity', 'random', 'content'], default='model')
             sub.add_argument('--random-seed', type=int, default=42)
-    freeze = commands.add_parser('freeze')
-    freeze.add_argument('--model', required=True)
-    freeze.add_argument('--validation-note', required=True, help='Reference to selected validation settings/results')
     args = parser.parse_args()
     if args.command == 'encode':
         fit_before = load_model_config(args.config)['train_end'] if args.config else None
@@ -259,17 +254,6 @@ def main():
         train_neural(args)
     elif args.command == 'predict':
         predict(args)
-    else:
-        if not args.validation_note.strip():
-            raise ValueError('Supply a validation selection note')
-        if not str(args.model).endswith('.pt'):
-            RelevanceModel.load(args.model)
-        elif not Path(args.model).exists():
-            raise ValueError(f'Model not found: {args.model}')
-        write_json(str(args.model) + '.frozen.json', {'model_sha256': file_hash(args.model),
-                   'validation_note': args.validation_note})
-        print('Model frozen for final test prediction')
-
 
 if __name__ == '__main__':
     main()

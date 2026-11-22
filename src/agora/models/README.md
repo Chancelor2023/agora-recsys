@@ -28,7 +28,6 @@ python -m agora.models encode --articles <articles> --output artifacts/models/em
 python -m agora.models train-neural --config configs/experiment.toml --articles <articles> --reads <reads_train.csv> --embeddings artifacts/models/embeddings.npz --model artifacts/models/neural.pt --feeds <feeds_train.jsonl> --labels <train_labels.json> --validation-feeds <feeds_validation.jsonl> --validation-labels <validation_labels.json> --report artifacts/models/neural_report.json --curves reports/week3/neural_loss_curves.png
 python -m agora.models train ... --model artifacts/models/model.json ...     # logistic baseline, same options
 python -m agora.models predict ... --model <model.json|neural.pt> --split validation --output <predictions.json>
-python -m agora.models freeze --model <model> --validation-note "<selected settings>"
-python -m agora.models predict ... --split test --output <predictions.json>   # requires the freeze
 ```
+`predict --split test` is refused: test predictions come only from the declared test run (`python -m agora.freeze create`, then `python -m agora.experiment --split test`, see `docs/test_protocol.md`).
 `--no-position-debias` trains the neural model without the position tower (ablation). `python -m agora.build` runs encode and both trainings. Synthetic end-to-end check: `python examples/smoke.py`.

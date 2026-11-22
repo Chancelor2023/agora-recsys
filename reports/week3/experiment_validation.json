@@ -2,7 +2,7 @@
   "split": "validation",
   "feeds": 1620,
   "neural_model": "nrms-8dd250d0620b523b",
-  "lambda_selected": 0.25,
+  "lambda_selected": 0.1,
   "lambdas": [
     0.0,
     0.1,
@@ -59,6 +59,10 @@
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.0823102794613514,
       "exposure_environment": 0.04928572303302608,
+      "NDCG@5_public_affairs": 0.1401942306933428,
+      "Recall@5_public_affairs": 0.22422680412371135,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.08085130549941673,
       "top10_overlap_same_candidates": 0.24608642951495519
     },
     "Most popular (article)": {
@@ -70,6 +74,10 @@
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.028298830656962298,
       "exposure_environment": 0.23789897796398787,
+      "NDCG@5_public_affairs": 0.03893167182841654,
+      "Recall@5_public_affairs": 0.08333333333333333,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.03179595974834131,
       "top10_overlap_same_candidates": 1.0
     },
     "Topic popularity": {
@@ -81,6 +89,10 @@
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.06802705685007825,
       "exposure_environment": 0,
+      "NDCG@5_public_affairs": 0.001329391090153064,
+      "Recall@5_public_affairs": 0.003436426116838488,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.004708223544140521,
       "top10_overlap_same_candidates": 0.9389759665621735
     },
     "Logistic regression": {
@@ -92,6 +104,10 @@
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.052676217452631395,
       "exposure_environment": 0.10762399595220698,
+      "NDCG@5_public_affairs": 0.0878240486984311,
+      "Recall@5_public_affairs": 0.15693012600229095,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.040815894866550496,
       "top10_overlap_same_candidates": 0.42305620682190914
     },
     "Neural (NRMS-style)": {
@@ -103,20 +119,110 @@
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.05569830997642066,
       "exposure_environment": 0.14009032522425893,
+      "NDCG@5_public_affairs": 0.02010105583863647,
+      "Recall@5_public_affairs": 0.04266895761741123,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.019747205696635416,
       "top10_overlap_same_candidates": 0.8541776231431405
     },
     "Neural + SCRUF-D": {
-      "NDCG@10": 0.40573154454954813,
-      "Recall@20": 0.8322887056172583,
-      "IPS-NDCG@10": 0.36076555164546903,
+      "NDCG@10": 0.4087263079873872,
+      "Recall@20": 0.8333058846407665,
+      "IPS-NDCG@10": 0.36286881132013876,
       "evaluated_feeds": 1106,
       "total_feeds": 1620,
       "excluded_zero_positive_feeds": 514,
-      "exposure_public_affairs": 0.08876013250305087,
-      "exposure_environment": 0.13530162802472834,
-      "top10_overlap_same_candidates": 0.7881191605329536
+      "exposure_public_affairs": 0.08647667921521056,
+      "exposure_environment": 0.139568526968346,
+      "NDCG@5_public_affairs": 0.11388655853080705,
+      "Recall@5_public_affairs": 0.2631729667812142,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.06713977689176365,
+      "top10_overlap_same_candidates": 0.8175230899368832
     }
   },
+  "comparisons": [
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Random",
+      "NDCG@10": {
+        "units": 484,
+        "difference_a_minus_b": 0.10366874328008781,
+        "ci_low": 0.08718023220360858,
+        "ci_high": 0.11915351984124635
+      },
+      "Recall@20": {
+        "units": 484,
+        "difference_a_minus_b": 0.0545585768587308,
+        "ci_low": 0.03510200119301169,
+        "ci_high": 0.07167616756378724
+      }
+    },
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Most popular (article)",
+      "NDCG@10": {
+        "units": 484,
+        "difference_a_minus_b": 0.00845274021243384,
+        "ci_low": -0.008504979557978236,
+        "ci_high": 0.026024137216859904
+      },
+      "Recall@20": {
+        "units": 484,
+        "difference_a_minus_b": 0.028401366399689643,
+        "ci_low": 0.010937583856532786,
+        "ci_high": 0.04588928032850037
+      }
+    },
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Topic popularity",
+      "NDCG@10": {
+        "units": 484,
+        "difference_a_minus_b": 0.08758664338663898,
+        "ci_low": 0.07256513624909153,
+        "ci_high": 0.10184979104476664
+      },
+      "Recall@20": {
+        "units": 484,
+        "difference_a_minus_b": 0.041992528307009135,
+        "ci_low": 0.023351316472895553,
+        "ci_high": 0.05993402819664306
+      }
+    },
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Logistic regression",
+      "NDCG@10": {
+        "units": 484,
+        "difference_a_minus_b": -0.010354556707761654,
+        "ci_low": -0.02611423844508194,
+        "ci_high": 0.005624963337650916
+      },
+      "Recall@20": {
+        "units": 484,
+        "difference_a_minus_b": -0.03279789397262233,
+        "ci_low": -0.04842013716393568,
+        "ci_high": -0.0181008357228493
+      }
+    },
+    {
+      "a": "Neural + SCRUF-D",
+      "b": "Neural (NRMS-style)",
+      "NDCG@10": {
+        "units": 484,
+        "difference_a_minus_b": -0.004003052296050602,
+        "ci_low": -0.006199318965600556,
+        "ci_high": -0.001840144521970146
+      },
+      "Recall@20": {
+        "units": 484,
+        "difference_a_minus_b": 0.0009041591320072332,
+        "ci_low": 0.0,
+        "ci_high": 0.002767719686910096
+      }
+    }
+  ],
   "lambda_sweep": {
     "0.0": {
       "NDCG@10": 0.41272936028343776,
@@ -126,7 +232,11 @@
       "total_feeds": 1620,
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.05569830997642066,
-      "exposure_environment": 0.14009032522425893
+      "exposure_environment": 0.14009032522425893,
+      "NDCG@5_public_affairs": 0.02010105583863647,
+      "Recall@5_public_affairs": 0.04266895761741123,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.019747205696635416
     },
     "0.1": {
       "NDCG@10": 0.4087263079873872,
@@ -136,7 +246,11 @@
       "total_feeds": 1620,
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.08647667921521056,
-      "exposure_environment": 0.139568526968346
+      "exposure_environment": 0.139568526968346,
+      "NDCG@5_public_affairs": 0.11388655853080705,
+      "Recall@5_public_affairs": 0.2631729667812142,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.06713977689176365
     },
     "0.25": {
       "NDCG@10": 0.40573154454954813,
@@ -146,7 +260,11 @@
       "total_feeds": 1620,
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.08876013250305087,
-      "exposure_environment": 0.13530162802472834
+      "exposure_environment": 0.13530162802472834,
+      "NDCG@5_public_affairs": 0.08775212204900541,
+      "Recall@5_public_affairs": 0.16981672394043526,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.07059463914710098
     },
     "0.5": {
       "NDCG@10": 0.40534888363769866,
@@ -156,7 +274,11 @@
       "total_feeds": 1620,
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.09022186321719025,
-      "exposure_environment": 0.13579399070251336
+      "exposure_environment": 0.13579399070251336,
+      "NDCG@5_public_affairs": 0.113886330666501,
+      "Recall@5_public_affairs": 0.1509163802978236,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.08097191498870954
     },
     "1.0": {
       "NDCG@10": 0.4052458459538234,
@@ -166,12 +288,16 @@
       "total_feeds": 1620,
       "excluded_zero_positive_feeds": 514,
       "exposure_public_affairs": 0.09020979734762548,
-      "exposure_environment": 0.1357887359678735
+      "exposure_environment": 0.1357887359678735,
+      "NDCG@5_public_affairs": 0.11732275678333949,
+      "Recall@5_public_affairs": 0.15435280641466206,
+      "evaluated_feeds_public_affairs": 291,
+      "exposure@5_public_affairs": 0.08101383962753166
     }
   },
   "examples": [
-    "HNbfQJnQC25hbXWGz_20231130022647",
-    "76eFE6GwTXKXPKiGw_20231202023014",
-    "P5tNedcF5SkrYjqAc_20231201073016"
+    "Ag4pnn5Qj3uzQspeW_20231202023014",
+    "5KGm3v6TQCHnNeY37_20231130022647",
+    "26ab9wY6m3bABg4At_20231201073017"
   ]
 }
