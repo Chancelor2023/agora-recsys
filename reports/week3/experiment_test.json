@@ -1,0 +1,258 @@
+{
+  "split": "test",
+  "feeds": 2656,
+  "neural_model": "nrms-8dd250d0620b523b",
+  "lambda_selected": 0.1,
+  "lambdas": [
+    0.0,
+    0.1
+  ],
+  "manifest_sha256": "6cfa197ee46b62d60ad7cf0f3a2886adc65d90917e66de5a64fba0cdc9fa8e97",
+  "propensity_by_position": [
+    1.0,
+    1.234,
+    0.998,
+    0.87,
+    0.822,
+    0.813,
+    0.778,
+    0.612,
+    0.643,
+    0.611,
+    0.605,
+    0.478,
+    0.469,
+    0.451,
+    0.303,
+    0.313,
+    0.465,
+    0.372,
+    0.336,
+    0.281,
+    0.293,
+    0.358,
+    0.278,
+    0.487,
+    0.425,
+    0.404
+  ],
+  "targets": {
+    "public_affairs": {
+      "target_share": 0.082,
+      "candidate_share": 0.08119670728469006
+    },
+    "environment": {
+      "target_share": 0.048,
+      "candidate_share": 0.047045112560115655
+    }
+  },
+  "rankings": {
+    "Random": {
+      "NDCG@10": 0.3133585391788234,
+      "Recall@20": 0.7896323265392104,
+      "IPS-NDCG@10": 0.27634439649866904,
+      "evaluated_feeds": 1512,
+      "total_feeds": 2656,
+      "excluded_zero_positive_feeds": 1144,
+      "exposure_public_affairs": 0.08183000778182307,
+      "exposure_environment": 0.04787127973053012,
+      "NDCG@5_public_affairs": 0.11393072621311011,
+      "Recall@5_public_affairs": 0.19246724890829695,
+      "evaluated_feeds_public_affairs": 458,
+      "exposure@5_public_affairs": 0.08264879531480447,
+      "top10_overlap_same_candidates": 0.24669907483025066
+    },
+    "Most popular (article)": {
+      "NDCG@10": 0.3500573641994917,
+      "Recall@20": 0.7787413890120691,
+      "IPS-NDCG@10": 0.2758159859562862,
+      "evaluated_feeds": 1512,
+      "total_feeds": 2656,
+      "excluded_zero_positive_feeds": 1144,
+      "exposure_public_affairs": 0.06300978096474588,
+      "exposure_environment": 0.2321109513224307,
+      "NDCG@5_public_affairs": 0.04205398683813361,
+      "Recall@5_public_affairs": 0.09315866084425035,
+      "evaluated_feeds_public_affairs": 458,
+      "exposure@5_public_affairs": 0.031662875244218715,
+      "top10_overlap_same_candidates": 1.0
+    },
+    "Topic popularity": {
+      "NDCG@10": 0.32896200633309686,
+      "Recall@20": 0.8292819548869167,
+      "IPS-NDCG@10": 0.30763027961342915,
+      "evaluated_feeds": 1512,
+      "total_feeds": 2656,
+      "excluded_zero_positive_feeds": 1144,
+      "exposure_public_affairs": 0.06085364074356424,
+      "exposure_environment": 0,
+      "NDCG@5_public_affairs": 0.0,
+      "Recall@5_public_affairs": 0.0,
+      "evaluated_feeds_public_affairs": 458,
+      "exposure@5_public_affairs": 0.0003457965145280266,
+      "top10_overlap_same_candidates": 0.9519064673145269
+    },
+    "Logistic regression": {
+      "NDCG@10": 0.42026305370586226,
+      "Recall@20": 0.8665015319191474,
+      "IPS-NDCG@10": 0.37533529974706836,
+      "evaluated_feeds": 1512,
+      "total_feeds": 2656,
+      "excluded_zero_positive_feeds": 1144,
+      "exposure_public_affairs": 0.07761550061362196,
+      "exposure_environment": 0.03193023168883118,
+      "NDCG@5_public_affairs": 0.15746940709224028,
+      "Recall@5_public_affairs": 0.2085880640465793,
+      "evaluated_feeds_public_affairs": 458,
+      "exposure@5_public_affairs": 0.07617917727662055,
+      "top10_overlap_same_candidates": 0.46886942370807755
+    },
+    "Neural (NRMS-style)": {
+      "NDCG@10": 0.3907920555464412,
+      "Recall@20": 0.86986743879849,
+      "IPS-NDCG@10": 0.34814331762685086,
+      "evaluated_feeds": 1512,
+      "total_feeds": 2656,
+      "excluded_zero_positive_feeds": 1144,
+      "exposure_public_affairs": 0.0930723292292325,
+      "exposure_environment": 0.14011800516649273,
+      "NDCG@5_public_affairs": 0.040110251447802045,
+      "Recall@5_public_affairs": 0.09534206695778748,
+      "evaluated_feeds_public_affairs": 458,
+      "exposure@5_public_affairs": 0.030531970674832497,
+      "top10_overlap_same_candidates": 0.8440418181359597
+    },
+    "Neural + SCRUF-D": {
+      "NDCG@10": 0.39035884732526466,
+      "Recall@20": 0.86986743879849,
+      "IPS-NDCG@10": 0.34747531490837064,
+      "evaluated_feeds": 1512,
+      "total_feeds": 2656,
+      "excluded_zero_positive_feeds": 1144,
+      "exposure_public_affairs": 0.10335162592110297,
+      "exposure_environment": 0.14003392360383263,
+      "NDCG@5_public_affairs": 0.06640621465972038,
+      "Recall@5_public_affairs": 0.15502183406113537,
+      "evaluated_feeds_public_affairs": 458,
+      "exposure@5_public_affairs": 0.04631807204850326,
+      "top10_overlap_same_candidates": 0.8388210540259304
+    }
+  },
+  "comparisons": [
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Random",
+      "NDCG@10": {
+        "units": 460,
+        "difference_a_minus_b": 0.0774335163676178,
+        "ci_low": 0.06299422914669249,
+        "ci_high": 0.09225558751802415
+      },
+      "Recall@20": {
+        "units": 460,
+        "difference_a_minus_b": 0.08023511225927968,
+        "ci_low": 0.06486312754019118,
+        "ci_high": 0.09507075774428593
+      }
+    },
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Most popular (article)",
+      "NDCG@10": {
+        "units": 460,
+        "difference_a_minus_b": 0.04073469134694953,
+        "ci_low": 0.026017243389493943,
+        "ci_high": 0.05620008194544102
+      },
+      "Recall@20": {
+        "units": 460,
+        "difference_a_minus_b": 0.09112604978642087,
+        "ci_low": 0.07383579248186102,
+        "ci_high": 0.10793037747653138
+      }
+    },
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Topic popularity",
+      "NDCG@10": {
+        "units": 460,
+        "difference_a_minus_b": 0.06183004921334431,
+        "ci_low": 0.04889355308026838,
+        "ci_high": 0.07420889260539419
+      },
+      "Recall@20": {
+        "units": 460,
+        "difference_a_minus_b": 0.040585483911573406,
+        "ci_low": 0.026753431324872113,
+        "ci_high": 0.05503975966857369
+      }
+    },
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Logistic regression",
+      "NDCG@10": {
+        "units": 460,
+        "difference_a_minus_b": -0.02947099815942107,
+        "ci_low": -0.0444357472993649,
+        "ci_high": -0.013711961778479085
+      },
+      "Recall@20": {
+        "units": 460,
+        "difference_a_minus_b": 0.003365906879342669,
+        "ci_low": -0.009694537790092784,
+        "ci_high": 0.01558868718614534
+      }
+    },
+    {
+      "a": "Neural + SCRUF-D",
+      "b": "Neural (NRMS-style)",
+      "NDCG@10": {
+        "units": 460,
+        "difference_a_minus_b": -0.00043320822117651057,
+        "ci_low": -0.001378673107677777,
+        "ci_high": 0.0004673292512819881
+      },
+      "Recall@20": {
+        "units": 460,
+        "difference_a_minus_b": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0
+      }
+    }
+  ],
+  "lambda_sweep": {
+    "0.0": {
+      "NDCG@10": 0.3907920555464412,
+      "Recall@20": 0.86986743879849,
+      "IPS-NDCG@10": 0.34814331762685086,
+      "evaluated_feeds": 1512,
+      "total_feeds": 2656,
+      "excluded_zero_positive_feeds": 1144,
+      "exposure_public_affairs": 0.0930723292292325,
+      "exposure_environment": 0.14011800516649273,
+      "NDCG@5_public_affairs": 0.040110251447802045,
+      "Recall@5_public_affairs": 0.09534206695778748,
+      "evaluated_feeds_public_affairs": 458,
+      "exposure@5_public_affairs": 0.030531970674832497
+    },
+    "0.1": {
+      "NDCG@10": 0.39035884732526466,
+      "Recall@20": 0.86986743879849,
+      "IPS-NDCG@10": 0.34747531490837064,
+      "evaluated_feeds": 1512,
+      "total_feeds": 2656,
+      "excluded_zero_positive_feeds": 1144,
+      "exposure_public_affairs": 0.10335162592110297,
+      "exposure_environment": 0.14003392360383263,
+      "NDCG@5_public_affairs": 0.06640621465972038,
+      "Recall@5_public_affairs": 0.15502183406113537,
+      "evaluated_feeds_public_affairs": 458,
+      "exposure@5_public_affairs": 0.04631807204850326
+    }
+  },
+  "examples": [
+    "sbgBBeZLcBWWaieYb_20231203022222",
+    "cB8cpMLHWonFa9GeE_20231207020906",
+    "XNwXo8BYwmJzAbeaD_20231204020856"
+  ]
+}
