@@ -176,8 +176,8 @@ Every run, including failed ones, is logged.
 
 | Member | Agreed (date) |
 | --- | --- |
-| Jerry Cheng | |
-| Brett Fajgenbaum | |
-| Ronald Donfack | |
-| Romain Cortyl | |
-| Mathis Groult | |
+| Jerry Cheng | 21/11 |
+| Brett Fajgenbaum | 22/11 |
+| Ronald Donfack | 22/11 |
+| Romain Cortyl | 21/11 |
+| Mathis Groult | 21/11 |
