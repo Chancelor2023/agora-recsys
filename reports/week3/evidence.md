@@ -169,12 +169,21 @@ What the test shows (stated as measured; no setting was changed after the run):
 
     ![Stored interactions](interface_click.png)
 
+## Q6 Clean-machine launch
+**No: 27 min 09 s for a 10-minute target.** Full record: [q6_clean_machine.md](q6_clean_machine.md).
+
+- Tester: Jerry (wrote the evaluation code, not the pipeline, models, API, interface or README), Windows 11 laptop, commit `3fe86ca`, new folder, new virtual environment, pip cache disabled, README only.
+- Timeline (22 Nov): install 14 min 48 s, IDEA download 4 s, build 9 min 41 s (neural training 5.6 min), API + interface + stored click 2 min 36 s.
+- The system runs end to end with no code change: `/mode` reports `is_mock: false`, a daily feed is ranked, displays and a click are stored in SQLite ([q6_mode.png](q6_mode.png), [q6_click.png](q6_click.png)).
+- README gap found and fixed after the run: `py -3.11 -m venv` fails without the Windows `py` launcher; `python -m venv .venv` works. The README time estimate was updated from 10 to about 25 minutes.
+- Next, for the showcase: make `sentence-transformers` optional and offer the frozen models as a download, then re-time.
+
 ## Test protocol
 Full protocol: [docs/test_protocol.md](../../docs/test_protocol.md); leakage checklist: [q3_leakage_checklist.md](q3_leakage_checklist.md).
 
 1. After the team decisions, freeze: `python -m agora.freeze create --note "..."` writes `artifacts/freeze/manifest.json`. It contains the hashes of the models, the embeddings and text encoder, the processed data and labels, both configs and the source code, plus lambda, agents, the git and IDEA commits and the package versions.
 2. `python -m agora.freeze verify` lists every difference with the manifest.
-3. The manifest is committed and pushed before the test run.
+3. The manifest is committed and pushed before the test run. Its SHA-256 is `53a65bd6…` as stored by git (LF line endings); the run log records `6cfa197e…`, the hash of the same file with the Windows line endings it had on disk.
 4. `python -m agora.experiment --split test` runs only if `verify` passes; the manifest is the only freeze mechanism. It evaluates exactly the six rows fixed in `docs/test_protocol.md` (section 3), with lambda 0 (ablation) and the frozen lambda, refuses `--lambdas`, and computes the declared bootstrap comparisons in the same run. All checks pass before the run is logged in `artifacts/freeze/test_runs.jsonl`, so a refused attempt is not a run. A second run needs `--rerun-reason` and writes `experiment_test_run2`, never over the first; once a run is logged, the manifest can no longer be replaced.
 
 ## Annex: position-reweighted NDCG
@@ -191,6 +200,6 @@ Readers mostly read what the app displayed at the top: IDEA's original display o
 
 ## Pending
 - Team decisions taken on 22 Nov (`docs/test_protocol.md`, section 6); test run once the same day (see "Test results").
-- Q6: clean-machine launch by a member who did not write the code, timed, following the README only.
+- Q6 done on 22 Nov (No, 27 min); faster clean launch to prepare and re-time before the showcase.
 - Re-measure the live top-10 overlap with the refitted encoder.
 - Q7 and the global risk level: team.

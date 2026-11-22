@@ -58,8 +58,9 @@ Legend: **OK** verified and reproduced · **FIX** must change before the freeze 
 
 | Item | Value |
 | --- | --- |
-| Frozen git commit | |
-| Freeze manifest SHA-256 | |
-| IDEA commit | |
-| Checked by / date | |
-| Data owner sign-off (Brett) / date | |
+| Frozen git commit | `cfae6c3355a01fe8e5e3f7df69a187226359949f` (clean tree) |
+| Freeze manifest SHA-256 | `53a65bd635b5a952d0d3493d2103f8c85953683d017652b1c57c53211ae956a5` as stored by git; `6cfa197ee46b62d60ad7cf0f3a2886adc65d90917e66de5a64fba0cdc9fa8e97` is the same file with Windows line endings, as recorded in `test_runs.jsonl` |
+| IDEA commit | `9a71a3e439daf3e0efc933b1927907235afa0575` |
+| Test run | Run 1 only, 22 Nov 2026 18:11:40–18:11:50 UTC, no re-run (`artifacts/freeze/test_runs.jsonl`) |
+| Checked by / date | Jerry, 22 Nov 2026: manifest hash, both configs and the source hash match commit `cfae6c3`; the 9 hashed data files are identical to an independent rebuild (models are machine-specific and were not compared) |
+| Data owner sign-off (Brett) / date | _to be filled by Brett_ |

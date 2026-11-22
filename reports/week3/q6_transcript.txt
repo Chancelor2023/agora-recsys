@@ -1,0 +1,97 @@
+# Q6 clean-machine run, PowerShell transcript (22 Nov 2026). Identity lines (user, computer name, process id)
+# were removed before committing; everything else is unchanged. PowerShell 5.1 does not record the output
+# of native programs run inside the activated virtual environment (pip, build, uvicorn): see q6_clean_machine.md.
+**********************
+Début de la transcription Windows PowerShell
+Heure de début : 20261122203107
+[removed]
+[removed]
+Nom de la configuration : 
+[removed]
+Application hôte : C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+[removed]
+PSVersion: 5.1.26100.9974
+PSEdition: Desktop
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.9974
+BuildVersion: 10.0.26100.9974
+CLRVersion: 4.0.30319.42000
+WSManStackVersion: 3.0
+PSRemotingProtocolVersion: 2.3
+SerializationVersion: 1.1.0.1
+**********************
+Transcription démarrée, le fichier de sortie est C:\q6\q6_transcript.txt
+PS C:\q6> Get-Date                                   # T0
+
+dimanche 22 novembre 2026 20:32:04
+
+
+PS C:\q6> git clone https://github.com/Chancelor2023/agora-recsys.git
+Cloning into 'agora-recsys'...
+remote: Enumerating objects: 431, done.
+remote: Counting objects: 100% (431/431), done.
+remote: Compressing objects: 100% (281/281), done.
+remote: Total 431 (delta 193), reused 336 (delta 119), pack-reused 0 (from 0)
+Receiving objects: 100% (431/431), 1.20 MiB | 5.48 MiB/s, done.
+Resolving deltas: 100% (193/193), done.
+PS C:\q6> cd agora-recsys
+PS C:\q6\agora-recsys> git rev-parse HEAD                         # commit testé
+3fe86ca5f1e83c187ccf075b89ac9713b2275440
+PS C:\q6\agora-recsys> py -3.11 -m venv .venv                     # commande du README : va échouer -> écart n° 1
+py : Le terme «py» n'est pas reconnu comme nom d'applet de commande, fonction, fichier de script ou programme 
+exécutable. Vérifiez l'orthographe du nom, ou si un chemin d'accès existe, vérifiez que le chemin d'accès est correct 
+et réessayez.
+Au caractère Ligne:1 : 1
++ py -3.11 -m venv .venv                     # commande du README : va  ...
++ ~~
+    + CategoryInfo          : ObjectNotFound: (py:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+py : Le terme «py» n'est pas reconnu comme nom d'applet de commande, fonction, fichier de script ou programme
+exécutable. Vérifiez l'orthographe du nom, ou si un chemin d'accès existe, vérifiez que le chemin d'accès est correct
+et réessayez.
+Au caractère Ligne:1 : 1
++ py -3.11 -m venv .venv                     # commande du README : va  ...
++ ~~
+    + CategoryInfo          : ObjectNotFound: (py:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+
+PS C:\q6\agora-recsys> python -m venv .venv                       # remplacement
+
+PS C:\q6\agora-recsys> .venv\Scripts\activate
+PS C:\q6\agora-recsys>
+(.venv) python -m pip install -r requirements.txt
+
+PS C:\q6\agora-recsys>
+(.venv) Get-Date                                   # T1
+
+dimanche 22 novembre 2026 20:46:52
+
+
+PS C:\q6\agora-recsys>
+(.venv) git clone --depth 1 https://github.com/Informfully/Datasets.git data/raw/Datasets
+
+PS C:\q6\agora-recsys>
+(.venv) Get-Date                                   # T2
+
+dimanche 22 novembre 2026 20:46:56
+
+
+PS C:\q6\agora-recsys>
+(.venv) python -m agora.build --idea-dir data/raw/Datasets/IDEA/dataset
+
+PS C:\q6\agora-recsys>
+(.venv) Get-Date                                   # T3
+
+dimanche 22 novembre 2026 20:56:37
+
+
+PS C:\q6\agora-recsys>
+(.venv) python -m uvicorn agora.api.main:app       # laisser tourner
+
+(.venv) Erreur de terminaison () : « Le pipeline a été arrêté. »
+>> Erreur de terminaison () : « Le pipeline a été arrêté. »
+PS C:\q6\agora-recsys>
+(.venv) Stop-Transcript
+**********************
+Fin de la transcription Windows PowerShell
+Heure de fin : 20261122210324
+**********************
