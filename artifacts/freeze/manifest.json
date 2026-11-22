@@ -1,0 +1,72 @@
+{
+  "paths": {
+    "data": "data/processed",
+    "models": "artifacts/models",
+    "config": "configs/experiment.toml",
+    "rerank_config": "configs/reranking_agents.json"
+  },
+  "files": {
+    "models/model.json": "a1c982bbc013ce071eb6f31dee177bc10841d965162555c6ccad673748700fcc",
+    "models/neural.pt": "7393c3ea6f42e35f20bfd8815e61dc0efc56a54bb22ec0fb43c7056aaac4b62a",
+    "models/embeddings.npz": "a9d84269af8f85c74f6afed146676ba8bb81696260d612a0f8ae279b617f04ae",
+    "models/embeddings.npz.json": "a68804d680ccfbeeafa80e58d8eb528158ba14154597c3366e08178d4839df16",
+    "models/embeddings.npz.encoder.joblib": "d2b47ecca96963c0c1168ce6be49affe8602f4a481d87b4eea92d762db960e67",
+    "data/articles.json": "c7e28568d404e5e694a7772e87c31561354f88cd4deb029e5d8d3ad0de1faa01",
+    "data/reads_train.csv": "6d3efd4ff535c6163a5fa19e5c2d180327614f2af751c909957db06661124a8b",
+    "data/feeds_train.jsonl": "565b2cc220e9b71d75643d0531ada76e3e6b9df18eeba2210fa05cc2347674ed",
+    "data/train_labels.json": "4f610d9fe2ddd5cda5a6548eb8839930f429c5ea1ad65ad1e0aa8f29c8b28be9",
+    "data/feeds_validation.jsonl": "723e3a20989fd9a9797a22fd4527f80b27345280f4e3543dbf408ed8683bea5f",
+    "data/validation_labels.json": "98b9ffbf79b4fa760f8f8134d0cadc1f2e88851862f0e37566a10d5a010f3e1b",
+    "data/feeds_test.jsonl": "b7dda7c07dc6ea964075871185b0289cddea71b014ec13a7e3d55c580e153eee",
+    "data/test_labels.json": "e56290392e0e665720d9184cc7e38e82ff4b8eeae4b7351a4a78240d60819569",
+    "data/eligible_users.json": "bb3fcf706502a0d2a0c6b3f03e87a2e671fc1abadbc321a1aaf75da56979c53f",
+    "configs/experiment.toml": "fd9016fc320b3d69f74b5d8255271bf260ad300b3d9aeb532726b9782c02d044",
+    "configs/reranking_agents.json": "d3566da9ec2b91f4c4cce000329fa8fc279b41ef12d55a8cb40b5eee4927f62a"
+  },
+  "source_sha256": "f53cea3fb953a2f574d8357c1be34e9d8b8474c229ff95aa8df2736f4026ed06",
+  "git_commit": "cfae6c3355a01fe8e5e3f7df69a187226359949f",
+  "git_tracked_changes": false,
+  "idea_commit": "9a71a3e439daf3e0efc933b1927907235afa0575",
+  "packages": {
+    "python": "3.13.7",
+    "numpy": "2.3.3",
+    "pandas": "2.3.2",
+    "scikit-learn": "1.7.2",
+    "torch": "2.11.0",
+    "joblib": "1.5.2",
+    "fastapi": "0.135.3"
+  },
+  "test_rows": [
+    "Random",
+    "Most popular (article)",
+    "Topic popularity",
+    "Logistic regression",
+    "Neural (NRMS-style)",
+    "Neural + SCRUF-D"
+  ],
+  "lambda_selected": 0.1,
+  "lambda_test": [
+    0.0,
+    0.1
+  ],
+  "agents": [
+    {
+      "name": "public_affairs",
+      "attribute": "topic",
+      "protected_values": [
+        "politics"
+      ],
+      "target_share": 0.082
+    },
+    {
+      "name": "environment",
+      "attribute": "topic",
+      "protected_values": [
+        "environment"
+      ],
+      "target_share": 0.048
+    }
+  ],
+  "created_at": "2026-11-22T18:07:11.137688+00:00",
+  "note": "Team decisions of 22 Nov 2026: neural primary model, lambda 0.1, six test rows, public-affairs @5 kept"
+}
