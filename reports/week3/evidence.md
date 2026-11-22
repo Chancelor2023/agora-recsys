@@ -54,7 +54,7 @@ Paired bootstrap as declared in `docs/test_protocol.md` (`python -m agora.evalua
 
 - Both models clearly beat random and topic popularity.
 - **Article-level most popular is a strong floor.** No candidate was read during training, so all its scores are 0 and the order is the tie-break on article IDs, which follow publication time: it ranks the oldest article first. That order alone reaches 0.404 NDCG@10. The neural model does not beat it in NDCG@10 (interval includes 0), only in Recall@20; the logistic baseline beats it narrowly. Why is not established yet (one hypothesis: older articles had more time to be read). It ignores the reader, so it is a floor to beat, not a recommender.
-- Neural vs logistic: no difference on NDCG@10; on Recall@20 the **logistic baseline is significantly better**. The neural model is kept for serving as the course's complex-model requirement, not because it wins on validation.
+- Neural vs logistic: no difference on NDCG@10; on Recall@20 the **logistic baseline is significantly better**. The team keeps the neural model as primary (decision of 22 Nov) for the course's complex-model requirement, not because it wins on validation.
 
 ## Sanity check: personalisation
 Several readers received the same 26 candidates on the same day (6 candidate sets). The mean top-10 overlap between them shows how personal the lists are (Jaccard index; 1 = everyone gets the same list):
@@ -64,7 +64,7 @@ Several readers received the same 26 candidates on the same day (6 candidate set
 | Random | 0.25 |
 | Logistic regression | 0.42 |
 | Neural | 0.85 |
-| Neural + SCRUF-D | 0.79 |
+| Neural + SCRUF-D (lambda 0.1) | 0.82 |
 | Topic popularity | 0.94 |
 | Most popular (article) | 1.00 |
 
@@ -85,16 +85,26 @@ Three readers before and after SCRUF-D: [experiment_validation.md](experiment_va
 - **Topics:** IDEA's 300+ categories are mapped to 12 topics by fixed rules (`src/agora/data/idea.py`); Sky News' "home" section is front-page news (uk_news).
 
 ## Q4 Innovation proof (validation, neural model)
-Own metric: position-weighted top-10 exposure of the protected topic (politics, agent `public_affairs`), compared with its share of the candidates (8.2%). Ablation: lambda = 0.
+Own metric: position-weighted top-10 exposure of the protected topic (politics, agent `public_affairs`), compared with its share of the candidates (8.2%). Ablation: lambda = 0. Lambda = 0.1 by the rule fixed before the freeze (`docs/test_protocol.md`, section 6): the smallest lambda of the grid that reaches the target.
 
 | | NDCG@10 | Recall@20 | Politics top-10 exposure |
 | --- | --- | --- | --- |
 | Ablation (lambda 0) | 0.4127 | 0.8324 | 0.056 |
-| SCRUF-D (lambda 0.25) | 0.4057 | 0.8323 | **0.089** (target 0.082 reached) |
+| SCRUF-D (lambda 0.1) | 0.4087 | 0.8333 | **0.086** (target 0.082 reached) |
 
-- Cost of the reranking: NDCG@10 −0.007, 95% CI [−0.010, −0.005] (same bootstrap as Q2); Recall@20 unchanged.
-- Lambda sweep: lambda 0.1 already reaches the target (0.086); 0.25, 0.5 and 1 give 0.089–0.090. The rule for the final lambda is a team decision to take before the freeze.
-- The `environment` agent never acts on validation: the neural model already gives environment 0.140 of top-10 exposure, above its 0.048 target.
+- Cost of the reranking: NDCG@10 −0.004, 95% CI [−0.006, −0.002] (same bootstrap as Q2); Recall@20 +0.001 [0.000, +0.003].
+- Lambda sweep: 0.25, 0.5 and 1 give 0.089–0.090 for a larger cost (NDCG@10 0.405–0.406). The margin over the target is small (0.086 vs 0.082), and the test target is the share of test candidates: it may not be reached on test, which would be reported as is.
+- **Supplementary public-affairs metrics at 5** (announced in `docs/temporal_protocol.md`; only politics reads count as relevant; 291 validation feeds contain at least one):
+
+| | NDCG@5 public affairs | Recall@5 public affairs | Politics top-5 exposure |
+| --- | --- | --- | --- |
+| Random | 0.140 | 0.224 | 0.081 |
+| Logistic regression | 0.088 | 0.157 | 0.041 |
+| Neural (lambda 0) | 0.020 | 0.043 | 0.020 |
+| Neural + SCRUF-D (lambda 0.1) | **0.114** | **0.263** | 0.067 |
+
+  The neural model pushes politics far down: only 4% of the politics articles readers actually read are in its top 5. With SCRUF-D, 26% are, so the extra exposure goes to politics articles that readers do read. Even so, politics top-5 exposure (0.067) stays below the share of politics in the candidates (0.082).
+- The `environment` agent never acts on validation: the neural model already gives environment 0.140 of top-10 exposure, above its 0.048 target. It is kept, as declared, and disclosed.
 - The logistic baseline gives politics only 0.053 of top-10 exposure.
 
 ![Trade-off](tradeoff_validation.png)
@@ -125,10 +135,10 @@ Readers mostly read what the app displayed at the top: IDEA's original display o
 | Topic popularity | 0.3049 |
 | Logistic regression | 0.3653 |
 | Neural (NRMS-style) | 0.3674 |
-| Neural + SCRUF-D (lambda 0.25) | 0.3608 |
+| Neural + SCRUF-D (lambda 0.1) | 0.3629 |
 
 ## Pending
-- Team decisions before the freeze: final lambda rule, rows of the test table, neural vs logistic as the main model (D1–D9).
+- Team decisions taken on 22 Nov (`docs/test_protocol.md`, section 6): neural model as primary, lambda 0.1, six test rows, public-affairs @5 metrics kept.
 - Q6: clean-machine launch by a member who did not write the code, timed, following the README only.
 - Re-measure the live top-10 overlap with the refitted encoder.
 - Test split: freeze, then run `python -m agora.experiment --split test` once.

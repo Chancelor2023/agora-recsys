@@ -191,6 +191,11 @@ def main(argv=None):
 
     # --- metrics -----------------------------------------------------------
     agents = rerank_config["agents"]
+    # Supplementary public-affairs metrics at 5 (docs/temporal_protocol.md): only reads of the
+    # first agent's protected topics count as relevant; feeds without such a read are excluded.
+    focus = agents[0]
+    focus_topics = set(focus["protected_values"])
+    focus_labels = [{**r, "label": int(r["label"] and topic_of[r["article_id"]] in focus_topics)} for r in labels]
     pool = Counter(topic_of[a] for f in feeds for a in f["candidates"])
     pool_share = {t: c / sum(pool.values()) for t, c in pool.items()}
 
@@ -206,6 +211,12 @@ def main(argv=None):
         for agent in agents:
             topics = set(agent["protected_values"])
             out[f"exposure_{agent['name']}"] = sum(v for t, v in exposure.items() if t in topics)
+        name = focus["name"]
+        at5 = evaluate(clean, focus_labels, 5, 5)
+        out[f"NDCG@5_{name}"] = at5["metrics"]["NDCG@5"]
+        out[f"Recall@5_{name}"] = at5["metrics"]["Recall@5"]
+        out[f"evaluated_feeds_{name}"] = at5["evaluated_feeds"]
+        out[f"exposure@5_{name}"] = sum(v for t, v in _exposure(preds, topic_of, k=5).items() if t in focus_topics)
         return out
 
     # Personalisation check: readers who received the same candidates should not all
@@ -296,6 +307,12 @@ def main(argv=None):
         md.append(f"| {name} | {fmt(row['NDCG@10'])} | {fmt(row['Recall@20'])} | {fmt(row['IPS-NDCG@10'])} | "
                   f"{fmt(row['top10_overlap_same_candidates'])} | "
                   + " | ".join(f"{row['exposure_' + n]:.3f}" for n in names) + " |")
+    fn = focus["name"]
+    md += ["", f"Supplementary {fn} metrics at 5 (only reads of {', '.join(sorted(focus_topics))} count as relevant; "
+           f"{first[f'evaluated_feeds_{fn}']} feeds with at least one such read):", "",
+           f"| Ranking | NDCG@5 {fn} | Recall@5 {fn} | Top-5 exposure {fn} |", "| --- | --- | --- | --- |"]
+    for name, row in table.items():
+        md.append(f"| {name} | {fmt(row[f'NDCG@5_{fn}'])} | {fmt(row[f'Recall@5_{fn}'])} | {row[f'exposure@5_{fn}']:.3f} |")
     md += ["", "Targets: " + "; ".join(f"{n} {t['target_share']:.3f} (share of {split} candidates {t['candidate_share']:.3f})"
                                        for n, t in targets.items()) + ".", "",
            "## Lambda sweep (neural + SCRUF-D)", "",

@@ -62,3 +62,28 @@ def test_interaction_store_is_safe_across_threads(tmp_path):
     for t in threads:
         t.join()
     assert store.count() == 400
+
+
+def test_labels_never_use_another_readers_read():
+    # u1 and u2 get the same article in feeds served at the same time; only u1 reads it,
+    # inside both windows. A merge on article only would label it 1 for u2 as well.
+    f = pd.DataFrame({"feed_id": ["f1", "f2"], "user_id": ["u1", "u2"],
+                      "ts": pd.to_datetime(["2023-11-24 10:00"] * 2, utc=True),
+                      "window_end": pd.to_datetime(["2023-11-25 10:00"] * 2, utc=True),
+                      "split": "train", "candidates": [["a1", "a2"], ["a1", "a2"]]})
+    reads = pd.DataFrame({"user_id": ["u1"], "article_id": ["a1"],
+                          "first_read_ts": pd.to_datetime(["2023-11-24 11:00"], utc=True)})
+    labels = {(r.feed_id, r.article_id): r.label for r in pipeline.build_labels(f, reads).itertuples()}
+    assert labels == {("f1", "a1"): 1, ("f1", "a2"): 0, ("f2", "a1"): 0, ("f2", "a2"): 0}
+
+
+def test_readers_with_fewer_than_five_training_articles_are_not_eligible(tmp_path):
+    feeds, reads, articles = _inputs()
+    few = pd.DataFrame({"user_id": ["u2"] * 4, "article_id": [f"a{i}" for i in range(4)],
+                        "read_at": [f"2023-11-25 1{i}:00:00" for i in range(4)]})
+    feeds2 = pd.concat([feeds, feeds.assign(feed_id="f2", user_id="u2")], ignore_index=True)
+    pipeline.run(feeds2, pd.concat([reads, few], ignore_index=True), tmp_path, articles=articles)
+    eligible = json.loads((tmp_path / "eligible_users.json").read_text(encoding="utf-8"))
+    assert "u1" in json.dumps(eligible) and "u2" not in json.dumps(eligible)
+    exported = (tmp_path / "feeds_validation.jsonl").read_text(encoding="utf-8")
+    assert "u2" not in exported and "u1" in exported

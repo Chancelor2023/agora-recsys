@@ -1,7 +1,7 @@
 # Final test protocol (Week 3)
 
-Status: **DRAFT, proposed by Jerry.** Items marked **[TEAM DECISION]** must be agreed
-before the freeze. Once the team signs it off (table at the end), this file is
+Status: **proposed by Jerry; team decisions taken on 22 Nov 2026** (sections 3 and 6),
+sign-off pending (section 10). Once the team signs it off (table at the end), this file is
 frozen with the experiment and changes only through a dated amendment that
 explains why.
 
@@ -32,7 +32,7 @@ have been seen.
 Interactions of the validation or test period are never used as features, even
 when they happen before a feed (no "online popularity").
 
-## 3. Rankings reported on test (closed list) [TEAM DECISION]
+## 3. Rankings reported on test (closed list, decided 22 Nov 2026)
 
 Proposed list, all evaluated on the same feeds, candidates and labels:
 
@@ -62,8 +62,8 @@ No other ranking, lambda or variant is computed on test.
 - Innovation metric: position-weighted top-10 exposure of each protected group,
   compared with that group's share of the **test** candidates (an input statistic,
   computed without labels).
-- Supplementary, if kept [TEAM DECISION]: NDCG@5 / Recall@5 for public affairs, as
-  announced in the temporal protocol.
+- Supplementary (kept, section 6): NDCG@5 / Recall@5 / top-5 exposure for public affairs,
+  as announced in the temporal protocol.
 - Exploratory only (appendix, no decision based on it): position-reweighted NDCG
   (`evaluation/ips.py`). Its propensities are read rates per position, so they mix
   the position effect with the relevance of the old ranking.
@@ -81,24 +81,35 @@ and Recall@20:
 
 ## 6. Choices made on validation, before the freeze
 
-### Lambda rule [TEAM DECISION]
-Proposed: the **smallest lambda of the grid {0, 0.1, 0.25, 0.5, 1}** whose
-validation top-10 exposure of the `public_affairs` group reaches its share of
-validation candidates. The rule is applied once, on the validation results
-regenerated after the encoder fix.
+### Lambda rule (decided 22 Nov 2026)
+The **smallest lambda of the grid {0, 0.1, 0.25, 0.5, 1}** whose validation top-10
+exposure of the `public_affairs` group reaches its share of validation candidates.
+Applied on the validation run regenerated after the encoder fix: lambda 0.1 gives
+0.086 against a target of 0.082 (0 gives 0.056), so **lambda = 0.1**.
 
-### Primary model [TEAM DECISION]
-Neural or logistic regression, chosen on validation and written here before the
-freeze. On the published validation run neither model is clearly better in
-NDCG@10 (neural - logistic: -0.0044, 95 % CI [-0.021, +0.013]). Logistic is better
-in Recall@20 (-0.015 [-0.030, -0.0001]) and gives more personal lists.
+### Primary model (decided 22 Nov 2026)
+**Neural (NRMS-style).** On validation (encoder fitted on training articles only,
+paired bootstrap over 484 readers) the two models do not differ in NDCG@10, the
+primary metric (neural - logistic: -0.010, 95 % CI [-0.026, +0.006]). Logistic
+regression is better in Recall@20 (-0.033 [-0.048, -0.018]), a secondary metric
+not used alone (section 4), and gives more personal lists. With no difference on
+the primary metric, the team keeps the neural model for the course requirement of
+a complex model; this is stated in the report as a choice, not as a measured gain.
+Logistic regression stays in the test table.
+
+### Supplementary metrics (decided 22 Nov 2026)
+Kept: NDCG@5, Recall@5 and top-5 exposure for public affairs, where only reads of
+the `public_affairs` topics (politics) count as relevant and feeds without such a
+read are excluded and counted. Reported for every ranking; no decision is based on
+them. The `environment` agent is kept although it does not act on validation
+(exposure already above its target); this is disclosed.
 
 ### Fixed values (filled at the freeze)
 | Item | Value |
 | --- | --- |
-| Primary model | |
-| Lambda | |
-| Agents and targets | |
+| Primary model | Neural (NRMS-style) |
+| Lambda | 0.1 |
+| Agents and targets | public_affairs (politics) 0.082; environment 0.048 (`configs/reranking_agents.json`) |
 | Git commit of the frozen code | |
 | IDEA dataset commit | `9a71a3e439daf3e0efc933b1927907235afa0575` (proposed) |
 | Freeze manifest SHA-256 | |
