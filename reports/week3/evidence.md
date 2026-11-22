@@ -1,10 +1,10 @@
-# Week 3 evidence (working draft, 20 November 2026)
+# Week 3 evidence (22 November 2026)
 Everything below is rebuilt from the full IDEA dataset with two commands:
 ```
 python -m agora.build --idea-dir data/raw/Datasets/IDEA/dataset
 python -m agora.experiment --split validation
 ```
-All figures are **validation** figures. The test split has not been evaluated: models, lambda and targets are selected on validation only, then frozen (see "Test protocol" below). Full tables, lambda sweep and reader examples: [experiment_validation.md](experiment_validation.md).
+Sections Models to Q4 report **validation** figures: models, lambda and targets were selected on validation only, then frozen. The test split was evaluated once afterwards: see "Test results". Full tables, lambda sweep and reader examples: [experiment_validation.md](experiment_validation.md) and [experiment_test.md](experiment_test.md).
 
 ## Models
 - **Neural recommender (served by the API), NRMS-style** (`src/agora/models/neural.py`, 43,496 trained parameters):
@@ -109,14 +109,65 @@ Own metric: position-weighted top-10 exposure of the protected topic (politics, 
 
 ![Trade-off](tradeoff_validation.png)
 
+## Test results (single declared run)
+The test split was evaluated **once**, on 22 Nov 2026, with the frozen state and nothing changed afterwards.
+
+- **Freeze:** `artifacts/freeze/manifest.json` created at 18:07:11 UTC on commit `cfae6c3` (protocol signed off, no uncommitted tracked change), and pushed at 18:07:51 UTC, before the run.
+- **Run:** started at 18:11:40 UTC and finished at 18:11:50 UTC (`artifacts/freeze/test_runs.jsonl`: run 1, no re-run).
+- **Hashes:** the log hashes the files as written on Windows (CRLF line endings). The manifest is `6cfa197e…` on disk and `53a65bd6…` in git (LF), and the result `experiment_test.json` is `b8ee5b80…`. The two forms are the same content.
+- **Full tables, reader examples and the λ = 0 ablation:** [experiment_test.md](experiment_test.md).
+
+1,512 of the 2,656 test feeds are evaluated; 1,144 have no read in the attribution window and are excluded.
+
+| Ranking | NDCG@10 | Recall@20 | Politics top-10 exposure | Top-10 overlap between readers |
+| --- | --- | --- | --- | --- |
+| Random | 0.3134 | 0.7896 | 0.082 | 0.25 |
+| Most popular (article) | 0.3501 | 0.7787 | 0.063 | 1.00 |
+| Topic popularity | 0.3290 | 0.8293 | 0.061 | 0.95 |
+| Logistic regression | **0.4203** | 0.8665 | 0.078 | 0.47 |
+| Neural (NRMS-style), primary model | 0.3908 | **0.8699** | 0.093 | 0.84 |
+| Neural + SCRUF-D (lambda 0.1) | 0.3904 | **0.8699** | 0.103 | 0.84 |
+
+Declared comparisons (A − B; paired bootstrap over readers, 2,000 resamples, seed 42, 95% CI), computed in the same run:
+
+| A − B | NDCG@10 | Recall@20 |
+| --- | --- | --- |
+| Neural − random | +0.077 [+0.063, +0.092] | +0.080 [+0.065, +0.095] |
+| Neural − most popular (article) | +0.041 [+0.026, +0.056] | +0.091 [+0.074, +0.108] |
+| Neural − topic popularity | +0.062 [+0.049, +0.074] | +0.041 [+0.027, +0.055] |
+| Neural − logistic | **−0.030 [−0.044, −0.014]** | +0.003 [−0.010, +0.016] |
+| Neural + SCRUF-D − neural | −0.0004 [−0.0014, +0.0005] | 0.000 [0.000, 0.000] |
+
+Supplementary public-affairs metrics at 5 (458 test feeds with at least one politics read):
+
+| Ranking | NDCG@5 public affairs | Recall@5 public affairs | Politics top-5 exposure |
+| --- | --- | --- | --- |
+| Random | 0.114 | 0.193 | 0.083 |
+| Logistic regression | **0.158** | **0.209** | 0.076 |
+| Neural (lambda 0) | 0.040 | 0.095 | 0.031 |
+| Neural + SCRUF-D (lambda 0.1) | 0.066 | 0.155 | 0.046 |
+
+What the test shows (stated as measured; no setting was changed after the run):
+- **Q2, sanity floor:** the neural model beats random, article-level most popular and topic popularity on both metrics. This time it also beats "oldest first" on NDCG@10, which it did not on validation.
+- **Primary model:** the logistic baseline ranks **significantly better** than the neural model on NDCG@10 (−0.030), with no difference on Recall@20. It also gives more personal lists (overlap 0.47 vs 0.84) and does better on politics reads at 5. On validation the two were not distinguishable on NDCG@10. The neural model, chosen before the test for the course requirement, therefore did not hold up as the better recommender: the simpler model is.
+- **Q4, SCRUF-D:** on test, the neural model alone already gives politics 0.093 of top-10 exposure, above the target (0.082; test candidate share 0.081). On validation it gave 0.056. With little deficit to correct, SCRUF-D changes almost nothing: exposure 0.103, NDCG@10 −0.0004 (interval includes 0). The top-10 exposure target is met on test, but mostly by the base model, not by the reranker.
+- **At top 5,** the neural model still pushes politics down (Recall@5 of politics reads 0.095, exposure 0.031). SCRUF-D raises them (0.155, 0.046) but stays below a random order and below the logistic baseline.
+- **Unchanged from validation:** the `environment` agent does not act (exposure 0.140 > 0.048), and the neural lists are much less personal than the logistic ones.
+
 ## Q5 Live system
-- **API:** `GET /mode` reports the NRMS model and SCRUF-D (`is_mock: false`). `/recommend` takes about 60 ms per IDEA feed; `/recommend_live` takes about 25 ms on today's articles. Both are well under 2 s.
+- **API:** `GET /mode` reports the NRMS model and SCRUF-D (`is_mock: false`). `/recommend` takes about 60 ms per IDEA feed. On 22 Nov 2026, with 410 live articles, the interface showed 36 ms for a live recommendation (26 candidates ranked). The **first** live call after start-up took 7.5 s, because the API then loads the text encoder and encodes the day's articles; later calls are well under 2 s.
 - **Recent articles:**
   - `python -m agora.data.live` fetched 558 articles from the RSS feeds of IDEA's 6 outlets on 19 Nov 2026 (`configs/live_sources.json`);
   - the model scores them with the saved text encoder, without retraining, after the personal candidate-generation stage; SCRUF-D then reranks them;
   - the interface offers "Today's news" next to the IDEA feeds.
 - **Interaction logging:** Streamlit interface → API → SQLite (writes serialised by a lock). Displays and clicks are stored and listed with `GET /interactions`.
-- To add: the two interface screenshots (today's news list; stored click).
+- **Screenshots (22 Nov 2026, frozen models, model version `nrms-8dd250d0620b523b+scruf-d-lambda-0.1`):**
+  - today's news for one reader, 10 of the 26 ranked candidates shown:
+
+    ![Today's news in the interface](interface_today.png)
+  - the click on the first article stored in SQLite after the 10 displays, with the same reader, feed `live` and model version:
+
+    ![Stored interactions](interface_click.png)
 
 ## Test protocol
 Full protocol: [docs/test_protocol.md](../../docs/test_protocol.md); leakage checklist: [q3_leakage_checklist.md](q3_leakage_checklist.md).
@@ -139,8 +190,7 @@ Readers mostly read what the app displayed at the top: IDEA's original display o
 | Neural + SCRUF-D (lambda 0.1) | 0.3629 |
 
 ## Pending
-- Team decisions taken on 22 Nov (`docs/test_protocol.md`, section 6): neural model as primary, lambda 0.1, six test rows, public-affairs @5 metrics kept.
+- Team decisions taken on 22 Nov (`docs/test_protocol.md`, section 6); test run once the same day (see "Test results").
 - Q6: clean-machine launch by a member who did not write the code, timed, following the README only.
 - Re-measure the live top-10 overlap with the refitted encoder.
-- Test split: freeze, then run `python -m agora.experiment --split test` once.
 - Q7 and the global risk level: team.
