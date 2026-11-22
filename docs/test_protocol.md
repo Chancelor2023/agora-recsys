@@ -1,7 +1,7 @@
 # Final test protocol (Week 3)
 
 Status: **proposed by Jerry; team decisions taken on 22 Nov 2026** (sections 3 and 6),
-sign-off pending (section 10). Once the team signs it off (table at the end), this file is
+**signed off by the five members on 22 Nov 2026** (section 10). Once signed off, this file is
 frozen with the experiment and changes only through a dated amendment that
 explains why.
 
@@ -34,7 +34,7 @@ when they happen before a feed (no "online popularity").
 
 ## 3. Rankings reported on test (closed list, decided 22 Nov 2026)
 
-Proposed list, all evaluated on the same feeds, candidates and labels:
+Closed list, all evaluated on the same feeds, candidates and labels:
 
 1. Random (seed 42).
 2. Most popular, article level (training reads). Reported with its explanation:
@@ -176,8 +176,8 @@ Every run, including failed ones, is logged.
 
 | Member | Agreed (date) |
 | --- | --- |
-| Jerry Cheng | |
-| Brett Fajgenbaum | |
-| Ronald Donfack | |
-| Romain Cortyl | |
-| Mathis Groult | |
+| Jerry Cheng | 2026-11-22, internal team discussion |
+| Brett Fajgenbaum | 2026-11-22, internal team discussion |
+| Ronald Donfack | 2026-11-22, internal team discussion |
+| Romain Cortyl | 2026-11-22, internal team discussion |
+| Mathis Groult | 2026-11-22, internal team discussion |
