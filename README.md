@@ -67,7 +67,7 @@ python -m agora.freeze create --note "why this state is frozen"
 python -m agora.freeze verify
 python -m agora.experiment --split test
 ```
-`verify_timezone` checks that IDEA's text timestamps are UTC+1. The validation experiment writes `reports/week3/experiment_validation.*`. The test split runs only after `freeze create`, and only if `freeze verify` reports no difference; every test run is logged in `artifacts/freeze/test_runs.jsonl`, and a second run needs `--rerun-reason` (details: `reports/week3/evidence.md`, "Test protocol").
+`verify_timezone` checks that IDEA's text timestamps are UTC+1. The validation experiment writes `reports/week3/experiment_validation.*`. The test split runs only after `freeze create`: the manifest is the only freeze mechanism. All checks (manifest, `--lambdas` refused, earlier run) pass before the run is logged in `artifacts/freeze/test_runs.jsonl`, so a refused attempt does not count as a run; a second run needs `--rerun-reason`. The run also computes the declared bootstrap comparisons, so test is read once (details: `docs/test_protocol.md`).
 
 ## API endpoints
 
@@ -94,16 +94,16 @@ python -m pytest
 ```
 python -m agora.experiment --split validation
 ```
-Writes `reports/week3/experiment_validation.md` (random, most-popular, logistic, neural and neural + SCRUF-D with NDCG@10, Recall@20, position-debiased IPS-NDCG@10 and topic exposure; lambda sweep; three reader examples) and the trade-off plot. The test split is run once, after `python -m agora.models freeze` on both models: `--split test`.
+Writes `reports/week3/experiment_validation.md` (random, most-popular, logistic, neural and neural + SCRUF-D with NDCG@10, Recall@20, position-debiased IPS-NDCG@10 and topic exposure; lambda sweep; three reader examples) and the trade-off plot. The test split is run once, after `python -m agora.freeze create` (see "Checks and test protocol" above): `--split test`.
 
 ## Retrain or re-run single components
 
 - Data pipeline: `python -m agora.data.pipeline --idea-dir data/raw/Datasets/IDEA/dataset --out data/processed` (see `src/agora/data/README.md`).
-- Models: `python -m agora.models train-neural ...` (neural), `train ...` (logistic), `predict`, `freeze` (see `src/agora/models/README.md`).
+- Models: `python -m agora.models train-neural ...` (neural), `train ...` (logistic), `predict` on train or validation (see `src/agora/models/README.md`).
 - Reranking: `python -m agora.reranking --input <predictions.json> --articles data/processed/articles.json --output <reranked.json>`; `--lambda 0` is the ablation (see `src/agora/reranking/README.md`).
 - Evaluation: `python -m agora.evaluation --config configs/experiment.toml --predictions <predictions.json> --labels data/processed/validation_labels.json` (see `src/agora/evaluation/README.md`).
 
-Validation labels are used for model selection only; test predictions require a frozen model (`python -m agora.models freeze`), and the test split is evaluated once.
+Validation labels are used for model selection only. Test predictions come only from `python -m agora.experiment --split test` after `python -m agora.freeze create`, and the test split is evaluated once.
 
 ## Repository layout
 

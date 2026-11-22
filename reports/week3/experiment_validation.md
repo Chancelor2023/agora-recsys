@@ -24,6 +24,16 @@ Supplementary public_affairs metrics at 5 (only reads of politics count as relev
 | Neural (NRMS-style) | 0.0201 | 0.0427 | 0.020 |
 | Neural + SCRUF-D | 0.1139 | 0.2632 | 0.067 |
 
+Declared comparisons (A − B; paired bootstrap over readers, 2,000 resamples, seed 42, 95% CI):
+
+| A | B | NDCG@10 | Recall@20 |
+| --- | --- | --- | --- |
+| Neural (NRMS-style) | Random | +0.1037 [+0.0872, +0.1192] | +0.0546 [+0.0351, +0.0717] |
+| Neural (NRMS-style) | Most popular (article) | +0.0085 [-0.0085, +0.0260] | +0.0284 [+0.0109, +0.0459] |
+| Neural (NRMS-style) | Topic popularity | +0.0876 [+0.0726, +0.1018] | +0.0420 [+0.0234, +0.0599] |
+| Neural (NRMS-style) | Logistic regression | -0.0104 [-0.0261, +0.0056] | -0.0328 [-0.0484, -0.0181] |
+| Neural + SCRUF-D | Neural (NRMS-style) | -0.0040 [-0.0062, -0.0018] | +0.0009 [+0.0000, +0.0028] |
+
 Targets: public_affairs 0.082 (share of validation candidates 0.082); environment 0.048 (share of validation candidates 0.048).
 
 ## Lambda sweep (neural + SCRUF-D)

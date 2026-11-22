@@ -33,12 +33,7 @@ FAVOURITE = {"u1": "politics", "u2": "sport", "u3": "environment", "u4": "cultur
 # Commands under test: the only two functions to adapt when the CLI changes.
 # --------------------------------------------------------------------------- #
 def freeze(root):
-    """Freeze everything that determines the test results."""
-    for model in ("model.json", "neural.pt"):
-        subprocess.run([sys.executable, "-m", "agora.models", "freeze",
-                        "--model", str(root / "models" / model),
-                        "--validation-note", "synthetic freeze-protocol test"],
-                       check=True, capture_output=True)
+    """Freeze everything that determines the test results (the manifest only, no sidecar)."""
     subprocess.run([sys.executable, "-m", "agora.freeze", "create",
                     "--note", "synthetic freeze-protocol test", "--idea-dir", str(root / "no-idea"),
                     "--data", str(root / "data"), "--models", str(root / "models"),
@@ -162,7 +157,7 @@ def _edit_json(path, change):
 
 
 # --------------------------------------------------------------------------- #
-# Already enforced at b2f6342
+# Frozen state: the manifest is the only freeze mechanism
 # --------------------------------------------------------------------------- #
 def test_untouched_frozen_artifacts_run(run_dir):
     report = run_experiment(run_dir)
@@ -170,9 +165,52 @@ def test_untouched_frozen_artifacts_run(run_dir):
     assert report["feeds"] == 8
 
 
-def test_refuses_unfrozen_models(run_dir):
-    (run_dir / "models" / "neural.pt.frozen.json").unlink()
+def test_refuses_unfrozen_state(run_dir):
+    (run_dir / "freeze" / "manifest.json").unlink()
     _refused(run_dir)
+
+
+def test_manifest_alone_is_enough(run_dir):
+    # create -> verify -> test run, with no legacy *.frozen.json sidecar anywhere
+    assert not list(run_dir.rglob("*.frozen.json"))
+    verify = subprocess.run([sys.executable, "-m", "agora.freeze", "verify",
+                             "--data", str(run_dir / "data"), "--models", str(run_dir / "models"),
+                             "--config", str(run_dir / "configs" / "experiment.toml"),
+                             "--rerank-config", str(run_dir / "configs" / "reranking_agents.json")],
+                            capture_output=True, text=True)
+    assert verify.returncode == 0, verify.stdout + verify.stderr
+    report = run_experiment(run_dir)
+    assert report["manifest_sha256"]
+    # the declared comparisons are computed in the same run (no second pass over test)
+    assert [(c["a"], c["b"]) for c in report["comparisons"]][-1] == ("Neural + SCRUF-D", "Neural (NRMS-style)")
+    assert all("ci_low" in c["NDCG@10"] and "ci_low" in c["Recall@20"] for c in report["comparisons"])
+    log = [json.loads(line) for line in (run_dir / "freeze" / "test_runs.jsonl").read_text().splitlines()]
+    assert [r["status"] for r in log] == ["started", "finished"]
+
+
+def test_refused_run_is_not_logged_and_does_not_consume_the_test(run_dir):
+    model = run_dir / "models" / "model.json"
+    original = model.read_bytes()
+    model.write_bytes(original + b" ")
+    _refused(run_dir)
+    assert not (run_dir / "freeze" / "test_runs.jsonl").exists()
+    model.write_bytes(original)
+    report = run_experiment(run_dir)  # still the first run: experiment_test, no --rerun-reason
+    assert report["split"] == "test"
+    assert not (run_dir / "out" / "experiment_test_run2.json").exists()
+
+
+def test_models_cli_refuses_test_predictions(run_dir):
+    result = subprocess.run([sys.executable, "-m", "agora.models", "predict",
+                             "--config", str(run_dir / "configs" / "experiment.toml"),
+                             "--articles", str(run_dir / "data" / "articles.json"),
+                             "--reads", str(run_dir / "data" / "reads_train.csv"),
+                             "--embeddings", str(run_dir / "models" / "embeddings.npz"),
+                             "--feeds", str(run_dir / "data" / "feeds_test.jsonl"),
+                             "--model", str(run_dir / "models" / "model.json"),
+                             "--split", "test", "--output", str(run_dir / "predictions.json")],
+                            capture_output=True, text=True)
+    assert result.returncode != 0 and not (run_dir / "predictions.json").exists()
 
 
 def test_refuses_modified_model_file(run_dir):

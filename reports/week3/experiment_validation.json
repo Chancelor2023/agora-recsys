@@ -141,6 +141,88 @@
       "top10_overlap_same_candidates": 0.8175230899368832
     }
   },
+  "comparisons": [
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Random",
+      "NDCG@10": {
+        "units": 484,
+        "difference_a_minus_b": 0.10366874328008781,
+        "ci_low": 0.08718023220360858,
+        "ci_high": 0.11915351984124635
+      },
+      "Recall@20": {
+        "units": 484,
+        "difference_a_minus_b": 0.0545585768587308,
+        "ci_low": 0.03510200119301169,
+        "ci_high": 0.07167616756378724
+      }
+    },
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Most popular (article)",
+      "NDCG@10": {
+        "units": 484,
+        "difference_a_minus_b": 0.00845274021243384,
+        "ci_low": -0.008504979557978236,
+        "ci_high": 0.026024137216859904
+      },
+      "Recall@20": {
+        "units": 484,
+        "difference_a_minus_b": 0.028401366399689643,
+        "ci_low": 0.010937583856532786,
+        "ci_high": 0.04588928032850037
+      }
+    },
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Topic popularity",
+      "NDCG@10": {
+        "units": 484,
+        "difference_a_minus_b": 0.08758664338663898,
+        "ci_low": 0.07256513624909153,
+        "ci_high": 0.10184979104476664
+      },
+      "Recall@20": {
+        "units": 484,
+        "difference_a_minus_b": 0.041992528307009135,
+        "ci_low": 0.023351316472895553,
+        "ci_high": 0.05993402819664306
+      }
+    },
+    {
+      "a": "Neural (NRMS-style)",
+      "b": "Logistic regression",
+      "NDCG@10": {
+        "units": 484,
+        "difference_a_minus_b": -0.010354556707761654,
+        "ci_low": -0.02611423844508194,
+        "ci_high": 0.005624963337650916
+      },
+      "Recall@20": {
+        "units": 484,
+        "difference_a_minus_b": -0.03279789397262233,
+        "ci_low": -0.04842013716393568,
+        "ci_high": -0.0181008357228493
+      }
+    },
+    {
+      "a": "Neural + SCRUF-D",
+      "b": "Neural (NRMS-style)",
+      "NDCG@10": {
+        "units": 484,
+        "difference_a_minus_b": -0.004003052296050602,
+        "ci_low": -0.006199318965600556,
+        "ci_high": -0.001840144521970146
+      },
+      "Recall@20": {
+        "units": 484,
+        "difference_a_minus_b": 0.0009041591320072332,
+        "ci_low": 0.0,
+        "ci_high": 0.002767719686910096
+      }
+    }
+  ],
   "lambda_sweep": {
     "0.0": {
       "NDCG@10": 0.41272936028343776,

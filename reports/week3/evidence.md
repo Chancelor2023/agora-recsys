@@ -103,7 +103,7 @@ Own metric: position-weighted top-10 exposure of the protected topic (politics, 
 | Neural (lambda 0) | 0.020 | 0.043 | 0.020 |
 | Neural + SCRUF-D (lambda 0.1) | **0.114** | **0.263** | 0.067 |
 
-  The neural model pushes politics far down: only 4% of the politics articles readers actually read are in its top 5. With SCRUF-D, 26% are, so the extra exposure goes to politics articles that readers do read. Even so, politics top-5 exposure (0.067) stays below the share of politics in the candidates (0.082).
+  The neural model almost excludes politics from the top 5: only 4% of the politics articles readers actually read are there. SCRUF-D restores it to about the level of a random order (random: Recall@5 0.224, NDCG@5 0.140, top-5 exposure 0.081; SCRUF-D: 0.263, 0.114, 0.067), still below the share of politics in the candidates (0.082).
 - The `environment` agent never acts on validation: the neural model already gives environment 0.140 of top-10 exposure, above its 0.048 target. It is kept, as declared, and disclosed.
 - The logistic baseline gives politics only 0.053 of top-10 exposure.
 
@@ -123,7 +123,8 @@ Full protocol: [docs/test_protocol.md](../../docs/test_protocol.md); leakage che
 
 1. After the team decisions, freeze: `python -m agora.freeze create --note "..."` writes `artifacts/freeze/manifest.json`. It contains the hashes of the models, the embeddings and text encoder, the processed data and labels, both configs and the source code, plus lambda, agents, the git and IDEA commits and the package versions.
 2. `python -m agora.freeze verify` lists every difference with the manifest.
-3. `python -m agora.experiment --split test` runs only if `verify` passes. It evaluates exactly the six rows fixed in `docs/test_protocol.md` (section 3), with lambda 0 (ablation) and the frozen lambda, and refuses `--lambdas`. Every run is logged in `artifacts/freeze/test_runs.jsonl`. A second run needs `--rerun-reason` and writes `experiment_test_run2`, never over the first; once a run is logged, the manifest can no longer be replaced.
+3. The manifest is committed and pushed before the test run.
+4. `python -m agora.experiment --split test` runs only if `verify` passes; the manifest is the only freeze mechanism. It evaluates exactly the six rows fixed in `docs/test_protocol.md` (section 3), with lambda 0 (ablation) and the frozen lambda, refuses `--lambdas`, and computes the declared bootstrap comparisons in the same run. All checks pass before the run is logged in `artifacts/freeze/test_runs.jsonl`, so a refused attempt is not a run. A second run needs `--rerun-reason` and writes `experiment_test_run2`, never over the first; once a run is logged, the manifest can no longer be replaced.
 
 ## Annex: position-reweighted NDCG
 Readers mostly read what the app displayed at the top: IDEA's original display order alone scores 0.508 NDCG@10. Position-reweighted NDCG@10 (labelled IPS-NDCG@10 in the generated tables) weights each read by 1 / P(seen | position), with propensities estimated on the training split. These propensities come from the old display order, which itself followed a ranking, so the correction is only partial. No decision in this report relies on it.

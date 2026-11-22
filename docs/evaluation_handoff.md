@@ -32,10 +32,9 @@ After receiving and checking the audit, evaluate validation:
 ```powershell
 python -m agora.evaluation --config configs/experiment.toml --predictions data/processed/validation_predictions.json --labels data/processed/validation_labels.json --output artifacts/evaluation/validation_metrics.json
 ```
-After validation choices are frozen, evaluate test:
-```powershell
-python -m agora.evaluation --config configs/experiment.toml --predictions data/processed/test_predictions.json --labels data/processed/test_labels.json --output artifacts/evaluation/test_metrics.json
-```
+Test is evaluated only by the declared run of `docs/test_protocol.md`
+(`python -m agora.freeze create`, then `python -m agora.experiment --split test`);
+`agora.models predict --split test` is refused.
 Use --scope supplementary with separately filtered matching inputs for @5 metrics.
 Keep real participant-level inputs and per-feed outputs outside version control.
 Only publish approved aggregate summaries.

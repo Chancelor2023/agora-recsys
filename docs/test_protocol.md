@@ -70,9 +70,12 @@ No other ranking, lambda or variant is computed on test.
 
 ## 5. Declared comparisons and uncertainty
 
-Paired bootstrap, `python -m agora.evaluation.bootstrap`, resampling **readers**
-(`--unit user`), 2,000 resamples, seed 42, 95 % percentile interval, on NDCG@10
-and Recall@20:
+Paired bootstrap (`agora.evaluation.bootstrap`), resampling **readers**
+(unit user), 2,000 resamples, seed 42, 95 % percentile interval, on NDCG@10
+and Recall@20. On test, the comparisons are computed by the test run itself
+(`comparisons` in `experiment_test.json`, table in `experiment_test.md`), so the
+test split is read once; `python -m agora.evaluation.bootstrap` compares
+prediction files (validation):
 
 1. Primary model vs random, vs most popular (article), vs topic popularity (Q2).
 2. Neural vs logistic regression.
@@ -122,28 +125,42 @@ and the test command refuses to run if any of them changed:
 - models: `model.json`, `neural.pt`;
 - text representation: `embeddings.npz`, `embeddings.npz.json`,
   `embeddings.npz.encoder.joblib`;
-- data inputs: `articles.json`, `reads_train.csv`, `feeds_{train,validation,test}.jsonl`,
-  `train_labels.json`, `validation_labels.json`;
+- data inputs: `articles.json`, `reads_train.csv`, `eligible_users.json`,
+  `feeds_{train,validation,test}.jsonl`, `{train,validation,test}_labels.json`;
 - settings: `configs/experiment.toml`, `configs/reranking_agents.json` (lambda,
   agents, targets, allocation, window, seed);
-- environment: git commit (clean working tree), IDEA commit, versions of Python,
-  numpy, pandas, scikit-learn and torch;
+- code: one hash over `src/agora/**/*.py`;
+- environment: versions of Python, numpy, pandas, scikit-learn, torch, joblib and
+  fastapi; git commit (the freeze warns if tracked files differ) and IDEA commit
+  are recorded;
 - the closed list of rankings of section 3 and the frozen lambda.
+
+`python -m agora.freeze create` writes `artifacts/freeze/manifest.json`; it is the
+only freeze mechanism (the former `agora.models freeze` sidecars are removed).
+`python -m agora.experiment --split test` runs every check (manifest, `--lambdas`
+refused, earlier run) before the run is logged, so a refused attempt is not a run.
 
 The frozen **artifacts** are used for the test. They are not rebuilt: a rebuild
 on another machine gives a different neural model hash.
 
 `tests/test_freeze_protocol.py` checks these refusals on synthetic data.
 
-## 8. Run procedure (Sunday)
+## 8. Run procedure
 
-1. Check out the frozen commit on a clean tree; verify the manifest.
-2. Run the test command once. It evaluates only the rankings of section 3 and
-   refuses to overwrite an existing `experiment_test.json`.
-3. Run the declared bootstrap comparisons of section 5.
-4. Append the run to `reports/week3/test_run_log.md`: date and time, operator,
-   git commit, manifest hash, command, exit status.
-5. Copy the numbers to the report without editing them.
+The artifacts are frozen without retraining and are git-ignored, so the freeze and
+the test run happen on the machine that holds them (Romain's).
+
+1. Check out the merged commit on a clean tree.
+2. `python -m agora.freeze create --note "..."`, then `python -m agora.freeze verify`.
+3. Commit and push the manifest at once (`git add -f artifacts/freeze/manifest.json`),
+   **before** the test run, so the freeze is timestamped before any test number exists.
+4. `python -m agora.experiment --split test`, once. It evaluates only the rankings of
+   section 3, computes the comparisons of section 5 and refuses to overwrite an
+   existing `experiment_test.json`.
+5. Commit `reports/week3/experiment_test.*` and the run log
+   (`git add -f artifacts/freeze/test_runs.jsonl`: start, finish, manifest and
+   result hashes); add the operator and the exit status in the PR.
+6. Copy the numbers to the report without editing them.
 
 ## 9. Re-running
 
