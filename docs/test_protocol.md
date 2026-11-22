@@ -113,9 +113,9 @@ them. The `environment` agent is kept although it does not act on validation
 | Primary model | Neural (NRMS-style) |
 | Lambda | 0.1 |
 | Agents and targets | public_affairs (politics) 0.082; environment 0.048 (`configs/reranking_agents.json`) |
-| Git commit of the frozen code | |
-| IDEA dataset commit | `9a71a3e439daf3e0efc933b1927907235afa0575` (proposed) |
-| Freeze manifest SHA-256 | |
+| Git commit of the frozen code | `cfae6c3355a01fe8e5e3f7df69a187226359949f` |
+| IDEA dataset commit | `9a71a3e439daf3e0efc933b1927907235afa0575` (recorded in the manifest) |
+| Freeze manifest SHA-256 | `6cfa197ee46b62d60ad7cf0f3a2886adc65d90917e66de5a64fba0cdc9fa8e97` as written on Windows (CRLF, the value in `artifacts/freeze/test_runs.jsonl`); `53a65bd635b5a952d0d3493d2103f8c85953683d017652b1c57c53211ae956a5` for the git copy (LF) |
 
 ## 7. Freeze manifest
 
