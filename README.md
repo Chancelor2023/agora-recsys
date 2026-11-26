@@ -20,15 +20,39 @@ Python 3.11 or newer and Git are required. Commands are run from the repository 
 
 **1. Clone and create the environment**
 
-Windows (CMD or PowerShell):
+Python 3.11 or later is required. Pick the block for your terminal.
+
+Windows, PowerShell or CMD:
 ```
 git clone https://github.com/Chancelor2023/agora-recsys.git
 cd agora-recsys
 py -3.11 -m venv .venv
 .venv\Scripts\activate
+python --version
 python -m pip install -r requirements.txt
 ```
-macOS / Linux / Git Bash: same, with `python3 -m venv .venv` and `source .venv/bin/activate` (Git Bash on Windows: `source .venv/Scripts/activate`).
+
+Windows, Git Bash:
+```
+git clone https://github.com/Chancelor2023/agora-recsys.git
+cd agora-recsys
+py -3.11 -m venv .venv
+source .venv/Scripts/activate
+python --version
+python -m pip install -r requirements.txt
+```
+On Windows, use `py`, not `python3`: `python3` may open the Microsoft Store shortcut and create nothing, without any error. The environment's scripts are in `.venv/Scripts`, not `.venv/bin`.
+
+macOS / Linux:
+```
+git clone https://github.com/Chancelor2023/agora-recsys.git
+cd agora-recsys
+python3 -m venv .venv
+source .venv/bin/activate
+python --version
+python -m pip install -r requirements.txt
+```
+`python --version` must print 3.11 or later, and the prompt starts with `(.venv)`. If `py -3.11` is not found, install Python 3.11 or use `py -m venv .venv` with any installed version from 3.11 on.
 
 **2. Download the IDEA dataset** (about 110 MB, public)
 ```
@@ -53,7 +77,7 @@ python -m uvicorn agora.api.main:app
 ```
 Check http://127.0.0.1:8000/mode: it must show `"is_mock": false`. Interactive documentation: http://127.0.0.1:8000/docs
 
-**5. Start the interface** (second terminal, environment activated)
+**5. Start the interface** (second terminal, in the `agora-recsys` folder, environment activated as in step 1: `.venv\Scripts\activate`, `source .venv/Scripts/activate` in Git Bash, `source .venv/bin/activate` on macOS / Linux)
 ```
 python -m streamlit run src/agora/frontend/app.py
 ```
