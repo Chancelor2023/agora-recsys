@@ -155,9 +155,9 @@ def create_app(service=None, store=None, mock: bool = False) -> FastAPI:
     def user_profile(user_id: str) -> dict:
         """Reading habits of the reader during the training period (topic counts)."""
         if service is None:
-            return {"user_id": user_id, "reads": 0, "articles": 0, "topics": {}}
+            return {"user_id": user_id, "reads": 0, "articles": 0, "topics": {}, "today": {}}
         try:
-            return service.profile(user_id)
+            return service.profile(user_id, read_ids=store.clicked(user_id, "live"))
         except (KeyError, ValueError) as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
 
@@ -196,7 +196,8 @@ def create_app(service=None, store=None, mock: bool = False) -> FastAPI:
         if service is None:
             raise HTTPException(status_code=503, detail="Live recommendations need the real service")
         try:
-            items = service.recommend_live(user_id, limit, lam=lam)
+            items = service.recommend_live(user_id, limit, lam=lam,
+                                           read_ids=store.clicked(user_id, "live"))
         except LookupError as error:
             raise HTTPException(status_code=503, detail=str(error)) from error
         except ValueError as error:

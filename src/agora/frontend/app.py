@@ -230,11 +230,17 @@ try:
 except requests.HTTPError:
     profile = {"reads": 0, "topics": {}}
 habits = Counter(profile.get("topics", {}))
-favourites = [t for t, _ in habits.most_common(3)]
+today = Counter(profile.get("today", {}))
+read_today = sum(today.values())
+# today's reads weigh 3 training reads each, as in the ranking (models/live.py, TODAY_WEIGHT)
+tastes = habits + Counter({t: 3 * n for t, n in today.items()})
+favourites = [t for t, _ in tastes.most_common(3)]
+who = name.lower() if name == "This reader" else name
+since = (f", plus {read_today} read today" if read_today else "")
 st.markdown(f'<div class="ag-reader"><h3>{esc(name)}{(", " + esc(habit)) if habit else ""}</h3>'
-            f'<p class="sub">What {esc(name.lower() if name == "This reader" else name)} read during '
-            f'the week of 23 November 2023 ({profile.get("reads", 0)} articles)</p>'
-            f'{strip(habits)}</div>', unsafe_allow_html=True)
+            f'<p class="sub">What {esc(who)} reads: the week of 23 November 2023 '
+            f'({profile.get("reads", 0)} articles){esc(since)}</p>'
+            f'{strip(tastes)}</div>', unsafe_allow_html=True)
 
 
 def reason(item) -> tuple[str, bool]:
@@ -270,9 +276,16 @@ with selection:
                 f'<span class="ag-why{" boost" if boosted else ""}">{esc(why)}</span>'
                 f'</div></div>', unsafe_allow_html=True)
         with right:
-            if st.button("Read", key=f"read-{rec_key}-{item['article_id']}", width="stretch"):
+            done = st.session_state.setdefault(f"read-ids-{user_id}", set())
+            if item["article_id"] in done:
+                st.button("Read ✓", key=f"read-{rec_key}-{item['article_id']}", width="stretch", disabled=True)
+            elif st.button("Read", key=f"read-{rec_key}-{item['article_id']}", width="stretch"):
                 log_event("click", item, data)
-                st.toast(f"Saved: {name} read “{item['title'][:60]}”")
+                done.add(item["article_id"])
+                st.toast(f"Saved: {name} read “{item['title'][:60]}”. "
+                         + ("Refresh the selection: Agora now counts it in your tastes."
+                            if feed_id == "live" else ""))
+                st.rerun()
             if item.get("url"):
                 st.link_button("Open", item["url"], width="stretch")
 
@@ -312,8 +325,8 @@ with behind:
         "4. **The public square.** Agora remembers what you read and what it showed you. When politics or "
         "environment news has been missing, it moves the closest of those stories up; how much depends on "
         "your window on the world.\n"
-        "5. **Your clicks.** Every article shown and every article read is saved, to measure and improve the "
-        "selection.")
+        "5. **Your clicks.** Every article you read is saved. In today's news, it is not proposed again and "
+        "it counts in your tastes, more than an old read: refresh the selection to see Agora adapt.")
     latency = data.get("latency_ms")
     st.caption(f"{len(everything)} articles ranked"
                + (f" in {latency:.0f} ms" if latency is not None else "")

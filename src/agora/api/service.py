@@ -191,8 +191,9 @@ class RecommenderService:
             cache[key] = reranker
         return cache[key]
 
-    def profile(self, user_id: str) -> dict[str, Any]:
-        """What the reader read during the training period: count and topics."""
+    def profile(self, user_id: str, read_ids=()) -> dict[str, Any]:
+        """What the reader read during the training period (count, topics), plus the topics
+        of today's articles they clicked (``today``)."""
         from agora.models.live import reader_history
 
         builder = self.predictor.builder
@@ -200,9 +201,14 @@ class RecommenderService:
             raise KeyError(f"Unknown user_id: {user_id}")
         past = reader_history(builder, user_id, builder.protocol.train_end)
         topics = self.articles.reindex(past.article_id.unique()).topic.dropna().value_counts()
+        today: dict[str, int] = {}
+        if read_ids and self.live_status().get("available"):
+            _, live, _ = self._load_live()
+            hits = live[live.article_id.isin(set(read_ids))]
+            today = {str(t): int(c) for t, c in hits.topic.value_counts().items()}
         return {"user_id": user_id, "reads": int(len(past)),
                 "articles": int(past.article_id.nunique()),
-                "topics": {str(t): int(c) for t, c in topics.items()}}
+                "topics": {str(t): int(c) for t, c in topics.items()}, "today": today}
 
     # ------------------------------------------------------------------ #
     # Today's news (RSS), scored with the same model and profiles
@@ -228,7 +234,9 @@ class RecommenderService:
         return self._live
 
     def recommend_live(self, user_id: str, limit: int = 20, now=None,
-                       lam: float | None = None) -> list[dict[str, Any]]:
+                       lam: float | None = None, read_ids=()) -> list[dict[str, Any]]:
+        """Today's news for one reader. ``read_ids``: today's articles the reader already
+        clicked; they are not proposed again and count in the reader's tastes."""
         from agora.models.live import live_features
 
         status = self.live_status()
@@ -241,11 +249,17 @@ class RecommenderService:
         # Stage 2 ranks this pool, the setting the model was trained in (IDEA feeds of ~26).
         reranker = self._reader_reranker(user_id, lam)
         protected = sorted({v for a in reranker.agents if a.attribute == "topic" for v in a.protected_values})
+        read = set(read_ids)
+        done = [i for i, a in enumerate(all_articles.article_id) if a in read]
+        extra = (all_vectors[done], all_articles.topic.iloc[done].tolist(),
+                 all_articles.outlet.iloc[done].tolist()) if done else None
         keep = _personal_pool(builder, user_id, all_articles, all_vectors, self.live_pool,
-                              protected, LIVE_PROTECTED_PER_TOPIC)
+                              protected, LIVE_PROTECTED_PER_TOPIC, exclude=set(done),
+                              extra_vectors=extra[0] if extra else None,
+                              extra_topics=extra[1] if extra else ())
         frame = all_articles.iloc[keep].reset_index(drop=True)
         vectors = all_vectors[keep]
-        features, history = live_features(builder, user_id, frame, vectors, now=now)
+        features, history = live_features(builder, user_id, frame, vectors, now=now, extra=extra)
         model = self.predictor.model
         if hasattr(model, "score_articles"):
             scores = model.score_articles(history, vectors, frame.topic.tolist(),
@@ -276,16 +290,23 @@ LIVE_HISTORY_LISTS = 5
 LIVE_PROTECTED_PER_TOPIC = 3
 
 
-def _personal_pool(builder, user_id, articles, vectors, size, protected=(), per_protected=0):
-    """Indices of a personal candidate pool: best per topic, then best overall."""
-    from agora.models.live import reader_history
+def _personal_pool(builder, user_id, articles, vectors, size, protected=(), per_protected=0,
+                   exclude=frozenset(), extra_vectors=None, extra_topics=()):
+    """Indices of a personal candidate pool: best per topic, then best overall.
+    "Best" = text similarity to the reader's profile plus the share of the article's topic
+    in the reader's reads. ``exclude``: indices never proposed (articles already read);
+    ``extra_vectors`` / ``extra_topics``: today's reads, added to the reader's history."""
+    from agora.models.live import TODAY_WEIGHT, reader_history, reader_profile
 
-    past = reader_history(builder, user_id, builder.protocol.train_end)
-    profile = builder.vectors[[builder.positions[a] for a in past.article_id]].mean(axis=0)
-    profile /= max(np.linalg.norm(profile), 1e-12)
+    cutoff = builder.protocol.train_end
+    profile = reader_profile(builder, user_id, cutoff, extra_vectors)
     norms = np.maximum(np.linalg.norm(vectors, axis=1), 1e-12)
     similarity = (vectors @ profile) / norms
-    order = list(np.argsort(-similarity, kind="stable"))
+    past = builder.articles.loc[reader_history(builder, user_id, cutoff).article_id].topic.tolist()
+    counts = pd.Series(past + list(extra_topics) * TODAY_WEIGHT, dtype=object).value_counts()
+    share = articles.topic.map(counts / counts.sum()).fillna(0.0).to_numpy()
+    interest = similarity + share
+    order = [i for i in np.argsort(-interest, kind="stable") if i not in exclude]
     chosen, seen_topics = [], set()
     for i in order:  # coverage: the closest article of each topic
         topic = articles.topic.iloc[i]
