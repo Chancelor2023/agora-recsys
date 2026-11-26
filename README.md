@@ -14,15 +14,12 @@ A neural news recommender (NRMS-style: attention over each reader's reading hist
 | Romain Cortyl | SCRUF-D-inspired reranking | `src/agora/reranking/` |
 | Mathis Groult | API, frontend and integration | `src/agora/api/`, `src/agora/frontend/` |
 
-## Run the system locally (about 25 minutes on a laptop)
+## Run the system locally (target: under 10 minutes)
 
 Python 3.11 or newer and Git are required. Commands are run from the repository root.
-Measured on a Windows laptop with a clean environment (22 Nov 2026): 27 minutes in total, of which
-15 for installing the dependencies and 10 for the build (`reports/week3/q6_clean_machine.md`).
+This path serves the **frozen** models, the ones evaluated once on the test split: they are downloaded (under 100 MB) instead of being retrained, so the IDEA download and the build are not needed. The first clean-machine test took 27 minutes because it rebuilt everything (`reports/week3/q6_clean_machine.md`); rebuilding is now optional (see below).
 
 **1. Clone and create the environment**
-
-Python 3.11 or later is required. Pick the block for your terminal.
 
 Windows, PowerShell or CMD:
 ```
@@ -31,19 +28,16 @@ cd agora-recsys
 python -m venv .venv
 .venv\Scripts\activate
 python --version
-python -m pip install -r requirements.txt
 ```
 
 Windows, Git Bash:
 ```
 git clone https://github.com/Chancelor2023/agora-recsys.git
 cd agora-recsys
-py -3.11 -m venv .venv
+python -m venv .venv
 source .venv/Scripts/activate
 python --version
-python -m pip install -r requirements.txt
 ```
-On Windows, use `py`, not `python3`: `python3` may open the Microsoft Store shortcut and create nothing, without any error. The environment's scripts are in `.venv/Scripts`, not `.venv/bin`.
 
 macOS / Linux:
 ```
@@ -52,20 +46,33 @@ cd agora-recsys
 python3 -m venv .venv
 source .venv/bin/activate
 python --version
-python -m pip install -r requirements.txt
 ```
-`python --version` must print 3.11 or later, and the prompt must start with `(.venv)`. On Windows, `python -m venv .venv` and `py -3.11 -m venv .venv` both work, but not `python3`, which may open the Microsoft Store shortcut. If PowerShell refuses to run the activation script, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in that window first.
+`python --version` must print 3.11 or later, and the prompt must start with `(.venv)`. On Windows, use `python` (or `py -3.12`, `py -3.13`… for a version you have installed), not `python3`, which may open the Microsoft Store shortcut; the environment's scripts are in `.venv/Scripts`, not `.venv/bin`. If PowerShell refuses to run the activation script, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in that window first.
 
-**2. Download the IDEA dataset** (about 110 MB, public)
+**2. Install the dependencies** (the longest step: PyTorch is about 200 MB)
 ```
-git clone --depth 1 https://github.com/Informfully/Datasets.git data/raw/Datasets
+python -m pip install uv
+uv pip install -r requirements.txt
 ```
+`uv` installs the same packages as pip, with parallel downloads. Without it: `python -m pip install -r requirements.txt` (slower). On Linux, first run `uv pip install torch --index-url https://download.pytorch.org/whl/cpu`, otherwise PyPI's PyTorch brings several GB of GPU libraries.
 
-**3. Build the data, embeddings and models** (3 to 10 minutes depending on the machine; 147 s, 327 s and 581 s measured)
+**3. Download the frozen models and data** (can run in a second terminal while step 2 installs)
 ```
-python -m agora.build --idea-dir data/raw/Datasets/IDEA/dataset
+python scripts/fetch_models.py
 ```
-This runs the data pipeline (`data/processed/`), encodes the articles, trains the logistic baseline and the neural recommender (`artifacts/models/`), and writes the loss curves to `reports/week3/`.
+It downloads the release archive, extracts `data/processed/` and `artifacts/models/`, and checks every file against the freeze manifest (`artifacts/freeze/manifest.json`). It uses the Python standard library only.
+
+**4. Start the API** (keep this terminal open)
+```
+python -m uvicorn agora.api.main:app
+```
+Check http://127.0.0.1:8000/mode: it must show `"is_mock": false` and model version `nrms-8dd250d0620b523b+scruf-d-lambda-0.1`. Interactive documentation: http://127.0.0.1:8000/docs
+
+**5. Start the interface** (second terminal, in the `agora-recsys` folder, environment activated as in step 1)
+```
+python -m streamlit run src/agora/frontend/app.py --server.headless true
+```
+Open http://localhost:8501, choose a reader, then "Today's news" (if fetched) or one of their IDEA daily feeds. "Read" sends a click to `/log_interaction`; the last stored events are shown at the bottom of the page (SQLite file `artifacts/agora.db`). `--server.headless true` skips Streamlit's first-run e-mail prompt.
 
 **Optional: fetch today's articles** (needs internet)
 ```
@@ -73,17 +80,12 @@ python -m agora.data.live
 ```
 Writes `data/live/articles_live.json` from the RSS feeds listed in `configs/live_sources.json`. Run it again to refresh; the API picks up the new file without a restart.
 
-**4. Start the API** (keep this terminal open)
+**Optional: rebuild everything from the raw dataset** (110 MB download, then 3 to 10 minutes; 147 s, 327 s and 581 s measured)
 ```
-python -m uvicorn agora.api.main:app
+git clone --depth 1 https://github.com/Informfully/Datasets.git data/raw/Datasets
+python -m agora.build --idea-dir data/raw/Datasets/IDEA/dataset
 ```
-Check http://127.0.0.1:8000/mode: it must show `"is_mock": false`. Interactive documentation: http://127.0.0.1:8000/docs
-
-**5. Start the interface** (second terminal, in the `agora-recsys` folder, environment activated as in step 1: `.venv\Scripts\activate`, `source .venv/Scripts/activate` in Git Bash, `source .venv/bin/activate` on macOS / Linux)
-```
-python -m streamlit run src/agora/frontend/app.py
-```
-Open http://localhost:8501, choose a reader, then "Today's news" (if fetched) or one of their IDEA daily feeds. "Read" sends a click to `/log_interaction`; the last stored events are shown at the bottom of the page (SQLite file `artifacts/agora.db`).
+This runs the data pipeline (`data/processed/`), encodes the articles, trains the logistic baseline and the neural recommender (`artifacts/models/`), and writes the loss curves to `reports/week3/`. Retrained models are close to the frozen ones but not identical (different model version).
 
 **Checks and test protocol** (optional)
 ```
