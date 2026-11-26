@@ -124,3 +124,15 @@ def test_reader_profile_and_window_setting():
 
 def test_mock_profile_is_empty():
     assert client.get("/users/demo-user/profile").json()["topics"] == {}
+
+
+def test_live_shortlist_keeps_protected_topics():
+    from agora.api.service import _personal_pool
+    service = _tiny_service()
+    builder = service.predictor.builder
+    live = pd.DataFrame({"topic": ["sport"] * 6 + ["politics"] * 3})
+    vectors = np.array([[1, 0, 0]] * 6 + [[0, 1, 0]] * 3, dtype=float)
+    plain = _personal_pool(builder, "u", live, vectors, 4)
+    kept = _personal_pool(builder, "u", live, vectors, 4, ["politics"], 3)
+    assert sum(live.topic.iloc[i] == "politics" for i in plain) == 1
+    assert sum(live.topic.iloc[i] == "politics" for i in kept) == 3

@@ -31,12 +31,13 @@ TOPICS = {
 }
 OTHER = ("Other", "#B5BCC8")
 
-# Window on the world: how much Agora may step in (SCRUF-D lambda). "Balanced" is the
-# setting evaluated on the test split; the other two are offered to the reader.
-WINDOWS = {"Only my interests": 0.0, "Balanced": None, "Wide": 1.0}
+# Window on the world: how much Agora may step in (SCRUF-D lambda). The test split was
+# evaluated at the frozen lambda 0.1 on IDEA feeds; on today's articles that boost is too
+# small to change a top 10, so the demo offers 0 / 0.5 / 1.
+WINDOWS = {"Only my interests": 0.0, "Balanced": 0.5, "Wide": 1.0}
 WINDOW_HELP = ("Only my interests: ranked by your reading habits alone. "
-               "Balanced: Agora keeps politics and environment news in view (the evaluated setting). "
-               "Wide: Agora steps in more often.")
+               "Balanced: when politics or environment news has been missing from what you read and saw, "
+               "Agora moves some of it up. Wide: Agora steps in more strongly.")
 
 st.set_page_config(page_title="Agora", page_icon=str(MARK) if MARK.exists() else None, layout="wide")
 if LOGO.exists():
@@ -199,8 +200,7 @@ lam = WINDOWS[window]
 rec_key = f"rec-{user_id}-{feed_id}-{window}"
 if refresh or rec_key not in st.session_state:
     params = {"user_id": user_id}
-    if lam is not None:
-        params["lam"] = lam
+    params["lam"] = lam
     try:
         if feed_id == "live":
             fetched = api("GET", "/recommend_live", params={**params, "limit": 26})
@@ -306,11 +306,12 @@ with compare:
 with behind:
     st.markdown(
         "1. **Your habits.** Agora learns from the articles you read: topics, outlets and the words they use.\n"
-        "2. **A shortlist.** From the day's articles it keeps 26: the closest to your habits, with at least one "
-        "article of each topic.\n"
+        "2. **A shortlist.** From the day's articles it keeps 26: the closest to your habits, at least one "
+        "article of each topic, and a few politics and environment stories.\n"
         "3. **Your ranking.** A model trained on what real readers of these outlets clicked scores how likely you are to read each one.\n"
-        "4. **The public square.** Agora remembers what it showed recently. When politics or environment news "
-        "has been missing, it moves the most relevant of those stories up.\n"
+        "4. **The public square.** Agora remembers what you read and what it showed you. When politics or "
+        "environment news has been missing, it moves the closest of those stories up; how much depends on "
+        "your window on the world.\n"
         "5. **Your clicks.** Every article shown and every article read is saved, to measure and improve the "
         "selection.")
     latency = data.get("latency_ms")
