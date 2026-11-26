@@ -104,3 +104,23 @@ def test_real_service_scores_and_reranks():
     assert data["latency_ms"] is not None
     assert real.get("/recommend", params={"user_id": "x", "feed_id": "f1"}).status_code == 422
     assert real.get("/recommend", params={"user_id": "u", "feed_id": "nope"}).status_code == 404
+
+
+def test_reader_profile_and_window_setting():
+    service = _tiny_service()
+    service.rerank_config = {"lambda": 1.0, "k": 2, "agents": [
+        {"name": "public_affairs", "attribute": "topic", "protected_values": ["politics"], "target_share": 0.5}]}
+    real = TestClient(create_app(service=service, store=InteractionStore(":memory:")))
+    profile = real.get("/users/u/profile").json()
+    assert profile["reads"] == 2 and profile["topics"] == {"sport": 2}
+    assert real.get("/users/nope/profile").status_code == 404
+    # lam=0: relevance order only, served by a separate reranker; the default one is untouched
+    plain = real.get("/recommend", params={"user_id": "u", "feed_id": "f1", "lam": 0}).json()
+    assert [i["reranking_score"] for i in plain["items"]] == sorted(
+        (i["reranking_score"] for i in plain["items"]), reverse=True)
+    assert service.reranker.state.n_updates == 0
+    assert real.get("/recommend", params={"user_id": "u", "feed_id": "f1", "lam": 5}).status_code == 422
+
+
+def test_mock_profile_is_empty():
+    assert client.get("/users/demo-user/profile").json()["topics"] == {}

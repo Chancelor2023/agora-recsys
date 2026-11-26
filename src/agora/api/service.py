@@ -87,7 +87,8 @@ class RecommenderService:
         protocol = TemporalProtocol.from_config(config)
         builder = ProfileBuilder(load_reads(paths.data_dir / "reads_train.csv"),
                                  articles, vectors, protocol)
-        if (paths.model_dir / "neural.pt").exists():
+        use_neural = os.environ.get("AGORA_MODEL", "neural").lower() != "logistic"
+        if use_neural and (paths.model_dir / "neural.pt").exists():
             from agora.models.neural import NeuralFeedPredictor, NeuralRecommender
             neural, payload = NeuralRecommender.load(paths.model_dir / "neural.pt", builder)
             predictor = NeuralFeedPredictor(builder, neural)
@@ -108,8 +109,10 @@ class RecommenderService:
         except (OSError, ValueError, ImportError):
             encoder = None  # live recommendations unavailable until the encoder is rebuilt
         version = f"{model_name}+scruf-d-lambda-{reranker.lam}"
-        return cls(predictor, articles_full, feeds, reranker, version, live_reranker,
-                   encoder, paths.live_articles)
+        service = cls(predictor, articles_full, feeds, reranker, version, live_reranker,
+                      encoder, paths.live_articles)
+        service.rerank_config = rerank_config
+        return service
 
     # ------------------------------------------------------------------ #
     def users(self) -> list[str]:
@@ -120,7 +123,7 @@ class RecommenderService:
             raise KeyError(f"Unknown user_id: {user_id}")
         return self._by_user[user_id]
 
-    def recommend(self, user_id: str, feed_id: str) -> list[dict[str, Any]]:
+    def recommend(self, user_id: str, feed_id: str, lam: float | None = None) -> list[dict[str, Any]]:
         feed = self.feeds.get(feed_id)
         if feed is None:
             raise KeyError(f"Unknown feed_id: {feed_id}")
@@ -134,8 +137,8 @@ class RecommenderService:
             candidates.append({"article_id": row["article_id"],
                                "relevance_score": row["relevance_score"],
                                "topic": meta["topic"], "outlet": meta["outlet"]})
-        result = self.reranker.rerank({"user_id": user_id, "feed_id": feed_id,
-                                       "candidates": candidates})
+        result = self._reranker_for(lam, live=False).rerank(
+            {"user_id": user_id, "feed_id": feed_id, "candidates": candidates})
         items = []
         for row in result.ranking:
             meta = self.articles.loc[row["article_id"]]
@@ -148,6 +151,32 @@ class RecommenderService:
                 "reranking_score": row["reranking_score"],
             })
         return items
+
+    def _reranker_for(self, lam: float | None, live: bool):
+        """The default reranker, or one per requested lambda (each with its own exposure state)."""
+        default = self.live_reranker if live else self.reranker
+        if lam is None or lam == default.lam or getattr(self, "rerank_config", None) is None:
+            return default
+        from agora.reranking.io import build_reranker
+
+        cache = self.__dict__.setdefault("_extra_rerankers", {})
+        key = (live, round(float(lam), 4))
+        if key not in cache:
+            cache[key] = build_reranker(self.rerank_config, lam=float(lam))
+        return cache[key]
+
+    def profile(self, user_id: str) -> dict[str, Any]:
+        """What the reader read during the training period: count and topics."""
+        from agora.models.live import reader_history
+
+        builder = self.predictor.builder
+        if user_id not in self._by_user:
+            raise KeyError(f"Unknown user_id: {user_id}")
+        past = reader_history(builder, user_id, builder.protocol.train_end)
+        topics = self.articles.reindex(past.article_id.unique()).topic.dropna().value_counts()
+        return {"user_id": user_id, "reads": int(len(past)),
+                "articles": int(past.article_id.nunique()),
+                "topics": {str(t): int(c) for t, c in topics.items()}}
 
     # ------------------------------------------------------------------ #
     # Today's news (RSS), scored with the same model and profiles
@@ -171,7 +200,8 @@ class RecommenderService:
             self._live = (mtime, frame, vectors)
         return self._live
 
-    def recommend_live(self, user_id: str, limit: int = 20, now=None) -> list[dict[str, Any]]:
+    def recommend_live(self, user_id: str, limit: int = 20, now=None,
+                       lam: float | None = None) -> list[dict[str, Any]]:
         from agora.models.live import live_features
 
         status = self.live_status()
@@ -195,7 +225,8 @@ class RecommenderService:
                                                     np.zeros(len(frame))]))
         candidates = [{"article_id": a, "relevance_score": float(s), "topic": t, "outlet": o}
                       for a, s, t, o in zip(frame.article_id, scores, frame.topic, frame.outlet)]
-        result = self.live_reranker.rerank({"user_id": user_id, "feed_id": "live", "candidates": candidates})
+        result = self._reranker_for(lam, live=True).rerank(
+            {"user_id": user_id, "feed_id": "live", "candidates": candidates})
         by_id = frame.set_index("article_id")
         items = []
         for row in result.ranking[:limit]:

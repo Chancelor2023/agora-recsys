@@ -72,7 +72,7 @@ Check http://127.0.0.1:8000/mode: it must show `"is_mock": false` and model vers
 ```
 python -m streamlit run src/agora/frontend/app.py --server.headless true
 ```
-Open http://localhost:8501, choose a reader, then "Today's news" (if fetched) or one of their IDEA daily feeds. "Read" sends a click to `/log_interaction`; the last stored events are shown at the bottom of the page (SQLite file `artifacts/agora.db`). `--server.headless true` skips Streamlit's first-run e-mail prompt.
+Open http://localhost:8501 and choose a reader: four demo readers (`configs/demo_personas.json`, invented names for real anonymised IDEA readers) or any other one. Then choose "Today's news" (if fetched) or an archive edition, and a window on the world: "Only my interests" (lambda 0), "Balanced" (the evaluated setting) or "Wide" (lambda 1). The "With and without Agora" tab compares the selection with the ranking by interest alone. "Read" sends a click to `/log_interaction`; the last stored events are shown at the bottom of the page (SQLite file `artifacts/agora.db`). `--server.headless true` skips Streamlit's first-run e-mail prompt.
 
 **Optional: fetch today's articles** (needs internet)
 ```
@@ -104,10 +104,13 @@ python -m agora.experiment --split test
 | `GET /health` | Health check |
 | `GET /mode` | Real or mock mode, model version |
 | `GET /users`, `GET /users/{user_id}/feeds` | Readers and their validation/test daily feeds |
-| `GET /recommend?user_id=...&feed_id=...` | Scored and reranked IDEA feed, with `latency_ms` |
-| `GET /live/status`, `GET /recommend_live?user_id=...` | Today's articles, scored for the reader and reranked |
+| `GET /users/{user_id}/profile` | Topics the reader read during the training period |
+| `GET /recommend?user_id=...&feed_id=...` | Scored and reranked IDEA feed, with `latency_ms`; optional `lam` (0 to 2) overrides lambda for this call |
+| `GET /live/status`, `GET /recommend_live?user_id=...` | Today's articles, scored for the reader and reranked; optional `lam` as above |
 | `POST /log_interaction` | Store a `display` or `click` event in SQLite |
 | `GET /interactions?user_id=...` | Last stored events |
+
+A call with `lam` uses its own reranker and exposure memory, so the default (frozen) setting is never changed by it. `AGORA_MODEL=logistic` makes the API serve the logistic model instead of the neural one (default: neural).
 
 Without `data/processed/` and `artifacts/models/` (or with `AGORA_MOCK=1`), the API falls back to the synthetic feed in `examples/feed_input.json` (`is_mock: true`).
 
