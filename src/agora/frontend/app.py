@@ -4,6 +4,7 @@ Run the API first, then:  python -m streamlit run src/agora/frontend/app.py --se
 The API address can be changed with AGORA_API_URL (default http://127.0.0.1:8000).
 Demo readers (names and habits) come from configs/demo_personas.json.
 """
+import base64
 import html
 import json
 import os
@@ -16,14 +17,16 @@ import streamlit as st
 
 API_URL = os.environ.get("AGORA_API_URL", "http://127.0.0.1:8000").rstrip("/")
 ROOT = Path(__file__).resolve().parents[3]
+ASSETS = Path(__file__).resolve().parent / "assets"
+LOGO, MARK = ASSETS / "agora_logo.png", ASSETS / "agora_mark.png"
 
 # One colour per topic: the colour system of the whole interface.
 TOPICS = {
     "politics": ("Politics", "#2F5BEA"), "environment": ("Environment", "#2E9E6B"),
     "world": ("World", "#7A5AF0"), "uk_news": ("UK news", "#4B9BD6"),
-    "business": ("Business", "#C98A12"), "sport": ("Sport", "#E2563B"),
-    "culture": ("Culture", "#C2479A"), "lifestyle": ("Lifestyle", "#E58FB4"),
-    "tech_science": ("Tech & science", "#159C9C"), "health": ("Health", "#E07A3F"),
+    "business": ("Business", "#7A6A58"), "sport": ("Sport", "#E8A92E"),
+    "culture": ("Culture", "#9B4DCA"), "lifestyle": ("Lifestyle", "#F0A8C4"),
+    "tech_science": ("Tech & science", "#159C9C"), "health": ("Health", "#D9708F"),
     "crime": ("Crime", "#8C2F39"), "opinion": ("Opinion", "#8A8F99"),
 }
 OTHER = ("Other", "#B5BCC8")
@@ -35,7 +38,9 @@ WINDOW_HELP = ("Only my interests: ranked by your reading habits alone. "
                "Balanced: Agora keeps politics and environment news in view (the evaluated setting). "
                "Wide: Agora steps in more often.")
 
-st.set_page_config(page_title="Agora", page_icon="🏛️", layout="wide")
+st.set_page_config(page_title="Agora", page_icon=str(MARK) if MARK.exists() else None, layout="wide")
+if LOGO.exists():
+    st.logo(str(LOGO), icon_image=str(MARK))
 
 st.markdown("""
 <style>
@@ -44,12 +49,13 @@ html, body, .stApp, .stMarkdown, button, input, label, textarea, [data-testid="s
   font-family: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif; }
 .block-container { padding-top: 2.2rem; max-width: 1180px; }
 .ag-head { margin-bottom: 1.4rem; }
-.ag-head h1 { font-size: 3.4rem; font-weight: 800; letter-spacing: -0.035em; line-height: 1; margin: 0; color: #18233A; }
-.ag-head p { font-size: 1.15rem; color: #4A5568; margin: .5rem 0 0; max-width: 46rem; }
+.ag-head img { height: 62px; width: auto; display: block; }
+.ag-head h1 { font-size: 3.4rem; font-weight: 800; letter-spacing: -0.035em; line-height: 1; margin: 0; color: #1C1F26; }
+.ag-head p { font-size: 1.15rem; color: #4A4F5A; margin: .8rem 0 0; max-width: 46rem; }
 .ag-reader { background: #fff; border-radius: 12px; padding: 1rem 1.25rem 1.1rem; margin-bottom: 1.2rem; }
-.ag-reader h3 { font-size: 1.35rem; font-weight: 700; margin: 0; color: #18233A; }
+.ag-reader h3 { font-size: 1.35rem; font-weight: 700; margin: 0; color: #1C1F26; }
 .ag-reader .sub { color: #6B7689; font-size: .92rem; margin: .15rem 0 0; }
-.ag-strip { display: flex; height: 16px; border-radius: 8px; overflow: hidden; margin: .7rem 0 .45rem; background: #E8EDF5; }
+.ag-strip { display: flex; height: 16px; border-radius: 8px; overflow: hidden; margin: .7rem 0 .45rem; background: #ECECEC; }
 .ag-strip span { display: block; height: 100%; }
 .ag-strip span + span { box-shadow: inset 2px 0 0 #fff; }
 .ag-legend { display: flex; flex-wrap: wrap; gap: .25rem 1.1rem; font-size: .86rem; color: #3A4457; }
@@ -59,25 +65,25 @@ html, body, .stApp, .stMarkdown, button, input, label, textarea, [data-testid="s
   border-radius: 10px; overflow: hidden; min-height: 112px; }
 .ag-item.noimg { grid-template-columns: 6px 1fr; }
 .ag-bar { background: var(--c); }
-.ag-thumb { background: #E8EDF5 center / cover no-repeat; border-radius: 6px; margin: .8rem 0; }
+.ag-thumb { background: #ECECEC center / cover no-repeat; border-radius: 6px; margin: .8rem 0; }
 .ag-body { padding: .75rem 1rem .85rem 0; }
 .ag-top { font-size: .86rem; color: #6B7689; }
 .ag-top b { color: var(--c); font-weight: 600; }
-.ag-num { font-weight: 800; color: #18233A; margin-right: .5rem; }
+.ag-num { font-weight: 800; color: #1C1F26; margin-right: .5rem; }
 .ag-title { font-family: 'Source Serif 4', Georgia, serif; font-weight: 600; font-size: 1.2rem; line-height: 1.3;
-  margin: .2rem 0 .3rem; color: #18233A; }
+  margin: .2rem 0 .3rem; color: #1C1F26; }
 .ag-lead { font-family: 'Source Serif 4', Georgia, serif; font-size: 1rem; line-height: 1.55; color: #3A4457;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; max-width: 62ch; }
 .ag-why { display: inline-block; font-size: .84rem; margin-top: .5rem; padding: .12rem .6rem; border-radius: 999px;
-  background: #EEF2FF; color: #2F5BEA; }
-.ag-why.boost { background: #2F5BEA; color: #fff; }
+  background: #EFEFEF; color: #4A4F5A; }
+.ag-why.boost { background: #B2482E; color: #fff; }
 .ag-row { display: flex; gap: .6rem; align-items: baseline; padding: .45rem .7rem; border-radius: 8px; background: #fff;
   margin-bottom: .3rem; border-left: 5px solid var(--c); }
-.ag-row .t { font-family: 'Source Serif 4', Georgia, serif; font-size: .98rem; line-height: 1.35; color: #18233A; }
+.ag-row .t { font-family: 'Source Serif 4', Georgia, serif; font-size: .98rem; line-height: 1.35; color: #1C1F26; }
 .ag-row .n { font-weight: 800; color: #9AA3B2; min-width: 1.4rem; }
-.ag-row.new { background: #EEF2FF; }
-.ag-row .tag { margin-left: auto; font-size: .78rem; color: #2F5BEA; white-space: nowrap; }
-.ag-count { font-size: 2.4rem; font-weight: 800; color: #18233A; line-height: 1; }
+.ag-row.new { background: #F6E6E1; }
+.ag-row .tag { margin-left: auto; font-size: .78rem; color: #B2482E; font-weight: 600; white-space: nowrap; }
+.ag-count { font-size: 2.4rem; font-weight: 800; color: #1C1F26; line-height: 1; }
 .ag-count small { font-size: 1rem; font-weight: 400; color: #6B7689; margin-left: .4rem; }
 [data-testid="stSidebar"] h2 { font-size: 1.05rem; font-weight: 700; }
 </style>
@@ -129,7 +135,9 @@ def when(value) -> str:
 
 
 # ---------------------------------------------------------------------------
-st.markdown('<div class="ag-head"><h1>Agora</h1><p>The news you like, with the stories that '
+brand = (f'<img src="data:image/png;base64,{base64.b64encode(LOGO.read_bytes()).decode()}" alt="Agora">'
+         if LOGO.exists() else "<h1>Agora</h1>")
+st.markdown(f'<div class="ag-head">{brand}<p>The news you like, with the stories that '
             'concern everyone kept in view.</p></div>', unsafe_allow_html=True)
 
 try:
