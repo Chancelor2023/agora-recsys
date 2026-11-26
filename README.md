@@ -14,9 +14,11 @@ A neural news recommender (NRMS-style: attention over each reader's reading hist
 | Romain Cortyl | SCRUF-D-inspired reranking | `src/agora/reranking/` |
 | Mathis Groult | API, frontend and integration | `src/agora/api/`, `src/agora/frontend/` |
 
-## Run the system locally (about 10 minutes)
+## Run the system locally (about 25 minutes on a laptop)
 
 Python 3.11 or newer and Git are required. Commands are run from the repository root.
+Measured on a Windows laptop with a clean environment (22 Nov 2026): 27 minutes in total, of which
+15 for installing the dependencies and 10 for the build (`reports/week3/q6_clean_machine.md`).
 
 **1. Clone and create the environment**
 
@@ -26,7 +28,7 @@ Windows, PowerShell or CMD:
 ```
 git clone https://github.com/Chancelor2023/agora-recsys.git
 cd agora-recsys
-py -3.11 -m venv .venv
+python -m venv .venv
 .venv\Scripts\activate
 python --version
 python -m pip install -r requirements.txt
@@ -52,14 +54,14 @@ source .venv/bin/activate
 python --version
 python -m pip install -r requirements.txt
 ```
-`python --version` must print 3.11 or later, and the prompt starts with `(.venv)`. If `py -3.11` is not found, install Python 3.11 or use `py -m venv .venv` with any installed version from 3.11 on.
+`python --version` must print 3.11 or later, and the prompt must start with `(.venv)`. On Windows, `python -m venv .venv` and `py -3.11 -m venv .venv` both work, but not `python3`, which may open the Microsoft Store shortcut. If PowerShell refuses to run the activation script, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in that window first.
 
 **2. Download the IDEA dataset** (about 110 MB, public)
 ```
 git clone --depth 1 https://github.com/Informfully/Datasets.git data/raw/Datasets
 ```
 
-**3. Build the data, embeddings and models** (3 to 6 minutes depending on the machine; 147 s and 327 s measured)
+**3. Build the data, embeddings and models** (3 to 10 minutes depending on the machine; 147 s, 327 s and 581 s measured)
 ```
 python -m agora.build --idea-dir data/raw/Datasets/IDEA/dataset
 ```
