@@ -1,0 +1,9 @@
+{
+  "note": "Demo readers for the interface. Names are invented for the showcase; each one maps to a real anonymised IDEA reader whose training history matches the description.",
+  "personas": [
+    {"user_id": "XNwXo8BYwmJzAbeaD", "name": "Sam", "habit": "follows sport first"},
+    {"user_id": "SB9AZ7y7tF5NBNrit", "name": "Lea", "habit": "reads culture and lifestyle"},
+    {"user_id": "ykm52FPoioEaqMjRk", "name": "Noah", "habit": "likes tech, science and health"},
+    {"user_id": "cjQ29k2Cy2ZK75uTb", "name": "Claire", "habit": "already follows politics"}
+  ]
+}

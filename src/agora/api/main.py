@@ -151,8 +151,19 @@ def create_app(service=None, store=None, mock: bool = False) -> FastAPI:
         except KeyError as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
 
+    @app.get("/users/{user_id}/profile")
+    def user_profile(user_id: str) -> dict:
+        """Reading habits of the reader during the training period (topic counts)."""
+        if service is None:
+            return {"user_id": user_id, "reads": 0, "articles": 0, "topics": {}}
+        try:
+            return service.profile(user_id)
+        except (KeyError, ValueError) as error:
+            raise HTTPException(status_code=404, detail=str(error)) from error
+
     @app.get("/recommend", response_model=RecommendationResponse)
-    def recommend(user_id: str, feed_id: str) -> RecommendationResponse:
+    def recommend(user_id: str, feed_id: str,
+                  lam: Optional[float] = Query(None, ge=0, le=2)) -> RecommendationResponse:
         """Return the reranked feed (or synthetic items in mock mode)."""
         start = time.perf_counter()
         if service is None:
@@ -160,7 +171,7 @@ def create_app(service=None, store=None, mock: bool = False) -> FastAPI:
                                           model_version=MODEL_VERSION, is_mock=True,
                                           items=load_mock_items())
         try:
-            items = service.recommend(user_id, feed_id)
+            items = service.recommend(user_id, feed_id, lam=lam)
         except KeyError as error:
             raise HTTPException(status_code=404, detail=str(error)) from error
         except ValueError as error:
@@ -178,13 +189,14 @@ def create_app(service=None, store=None, mock: bool = False) -> FastAPI:
         return service.live_status()
 
     @app.get("/recommend_live", response_model=RecommendationResponse)
-    def recommend_live(user_id: str, limit: int = Query(20, ge=1, le=200)) -> RecommendationResponse:
+    def recommend_live(user_id: str, limit: int = Query(20, ge=1, le=200),
+                       lam: Optional[float] = Query(None, ge=0, le=2)) -> RecommendationResponse:
         """Recommend today's articles (RSS) to a reader, with the same model and reranker."""
         start = time.perf_counter()
         if service is None:
             raise HTTPException(status_code=503, detail="Live recommendations need the real service")
         try:
-            items = service.recommend_live(user_id, limit)
+            items = service.recommend_live(user_id, limit, lam=lam)
         except LookupError as error:
             raise HTTPException(status_code=503, detail=str(error)) from error
         except ValueError as error:
