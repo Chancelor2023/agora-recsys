@@ -2,6 +2,8 @@
 
 Events written here are actual app events (display, click). They are kept apart
 from the IDEA source records and are never used as training or evaluation data.
+Clicks on today's news are read back by the API to adapt the live demo: an article
+already read is not proposed again, and it counts in the reader's tastes.
 """
 from __future__ import annotations
 
@@ -71,6 +73,18 @@ class InteractionStore:
         with self._lock:
             rows = self._conn.execute(query, params).fetchall()
         return [dict(zip(COLUMNS, r)) for r in rows]
+
+    def clicked(self, user_id: str, feed_id: str | None = None) -> list[str]:
+        """Distinct articles the reader clicked, in the order of their first click."""
+        query = "SELECT article_id, MIN(received_at) AS first FROM interactions WHERE user_id = ? AND event_type = 'click'"
+        params: list[Any] = [user_id]
+        if feed_id:
+            query += " AND feed_id = ?"
+            params.append(feed_id)
+        query += " GROUP BY article_id ORDER BY first"
+        with self._lock:
+            rows = self._conn.execute(query, params).fetchall()
+        return [r[0] for r in rows]
 
     def count(self) -> int:
         with self._lock:

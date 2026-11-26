@@ -136,3 +136,31 @@ def test_live_shortlist_keeps_protected_topics():
     kept = _personal_pool(builder, "u", live, vectors, 4, ["politics"], 3)
     assert sum(live.topic.iloc[i] == "politics" for i in plain) == 1
     assert sum(live.topic.iloc[i] == "politics" for i in kept) == 3
+
+
+def test_clicks_are_read_back_for_the_live_demo():
+    store = InteractionStore(":memory:")
+    for i, (article, feed) in enumerate([("a1", "live"), ("a2", "live"), ("a1", "live"), ("a3", "f1")]):
+        store.insert({"event_id": f"e{i}", "user_id": "u", "feed_id": feed, "article_id": article,
+                      "event_type": "click", "timestamp": "2026-11-26T10:00:00Z",
+                      "displayed_rank": 1, "model_version": "t", "received_at": f"2026-11-26T10:00:0{i}Z"})
+    assert store.clicked("u", "live") == ["a1", "a2"]
+    assert store.clicked("u") == ["a1", "a2", "a3"]
+    assert store.clicked("nobody") == []
+
+
+def test_todays_reads_are_excluded_and_shift_tastes():
+    from agora.api.service import _personal_pool
+    from agora.models.live import live_features
+    service = _tiny_service()
+    builder = service.predictor.builder
+    live = pd.DataFrame({"topic": ["sport"] * 3 + ["politics"] * 3, "outlet": "o",
+                         "published_at": "2026-11-26T08:00:00Z"})
+    vectors = np.array([[1, 0, 0]] * 3 + [[0, 1, 0]] * 3, dtype=float)
+    pool = _personal_pool(builder, "u", live, vectors, 3, exclude={0})
+    assert 0 not in pool
+    before, _ = live_features(builder, "u", live, vectors)
+    after, _ = live_features(builder, "u", live, vectors,
+                             extra=(vectors[[3, 4]], ["politics", "politics"], ["o", "o"]))
+    assert after[3, 1] > before[3, 1]          # topic affinity for politics went up
+    assert after[3, 0] > before[3, 0]          # and so did content similarity
