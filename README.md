@@ -54,7 +54,7 @@ python --version
 python -m pip install uv
 uv pip install -r requirements.txt
 ```
-`uv` installs the same packages as pip, with parallel downloads. Without it: `python -m pip install -r requirements.txt` (slower). On Linux, first run `uv pip install torch --index-url https://download.pytorch.org/whl/cpu`, otherwise PyPI's PyTorch brings several GB of GPU libraries.
+`uv` installs the same packages as pip, with parallel downloads. Without it: `python -m pip install -r requirements.txt` (slower). In a OneDrive (or other synced) folder, add `--link-mode=copy`: `uv pip install --link-mode=copy -r requirements.txt`; otherwise Windows refuses the hard links that `uv` creates (os error 396). On Linux, first run `uv pip install torch --index-url https://download.pytorch.org/whl/cpu`, otherwise PyPI's PyTorch brings several GB of GPU libraries.
 
 **3. Download the frozen models and data** (can run in a second terminal while step 2 installs)
 ```
@@ -72,7 +72,7 @@ Check http://127.0.0.1:8000/mode: it must show `"is_mock": false` and model vers
 ```
 python -m streamlit run src/agora/frontend/app.py --server.headless true
 ```
-Open http://localhost:8501 and choose a reader: four demo readers (`configs/demo_personas.json`, invented names for real anonymised IDEA readers) or any other one. Then choose "Today's news" (if fetched) or an archive edition, and a window on the world: "Only my interests" (lambda 0), "Balanced" (the evaluated setting) or "Wide" (lambda 1). The "With and without Agora" tab compares the selection with the ranking by interest alone. "Read" sends a click to `/log_interaction`; the last stored events are shown at the bottom of the page (SQLite file `artifacts/agora.db`). `--server.headless true` skips Streamlit's first-run e-mail prompt.
+Open http://localhost:8501 and choose a reader: four demo readers (`configs/demo_personas.json`, invented names for real anonymised IDEA readers) or any other one. Then choose "Today's news" (if fetched) or an archive edition, and a window on the world: "Only my interests" (lambda 0), "Balanced" (lambda 0.5) or "Wide" (lambda 1). The test split was evaluated at the frozen lambda 0.1 on IDEA feeds; on today's articles that boost rarely changes a top 10, hence the demo settings. For today's news, Agora keeps one memory per reader, started with the reader's training week, and the shortlist keeps the reader's 3 closest politics and environment articles. The "With and without Agora" tab compares the selection with the ranking by interest alone. "Read" sends a click to `/log_interaction`; the last stored events are shown at the bottom of the page (SQLite file `artifacts/agora.db`). `--server.headless true` skips Streamlit's first-run e-mail prompt.
 
 **Optional: fetch today's articles** (needs internet)
 ```

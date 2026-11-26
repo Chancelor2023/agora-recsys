@@ -165,6 +165,32 @@ class RecommenderService:
             cache[key] = build_reranker(self.rerank_config, lam=float(lam))
         return cache[key]
 
+    def _reader_reranker(self, user_id: str, lam: float | None):
+        """Live mode: one reranker per reader and setting, its memory started with the
+        reader's own training week, so "recently shown" means shown to this reader."""
+        config = getattr(self, "rerank_config", None)
+        if config is None:
+            return self._reranker_for(lam, live=True)
+        from agora.reranking.io import build_reranker
+
+        lam = self.live_reranker.lam if lam is None else float(lam)
+        cache = self.__dict__.setdefault("_reader_rerankers", {})
+        key = (user_id, round(lam, 4))
+        if key not in cache:
+            reranker = build_reranker(config, lam=lam)
+            try:
+                topics = self.profile(user_id)["topics"]
+            except (KeyError, ValueError):
+                topics = {}
+            total = sum(topics.values())
+            if total:
+                shares = {a.name: sum(n for t, n in topics.items() if a.is_protected({a.attribute: t})) / total
+                          for a in reranker.agents}
+                for _ in range(LIVE_HISTORY_LISTS):
+                    reranker.state.update(shares)
+            cache[key] = reranker
+        return cache[key]
+
     def profile(self, user_id: str) -> dict[str, Any]:
         """What the reader read during the training period: count and topics."""
         from agora.models.live import reader_history
@@ -213,7 +239,10 @@ class RecommenderService:
         # Stage 1, candidate generation: a personal pool of `pool` articles, the reader's
         # closest article in every topic (coverage) then the closest overall (interest).
         # Stage 2 ranks this pool, the setting the model was trained in (IDEA feeds of ~26).
-        keep = _personal_pool(builder, user_id, all_articles, all_vectors, self.live_pool)
+        reranker = self._reader_reranker(user_id, lam)
+        protected = sorted({v for a in reranker.agents if a.attribute == "topic" for v in a.protected_values})
+        keep = _personal_pool(builder, user_id, all_articles, all_vectors, self.live_pool,
+                              protected, LIVE_PROTECTED_PER_TOPIC)
         frame = all_articles.iloc[keep].reset_index(drop=True)
         vectors = all_vectors[keep]
         features, history = live_features(builder, user_id, frame, vectors, now=now)
@@ -226,8 +255,7 @@ class RecommenderService:
                                                     np.zeros(len(frame))]))
         candidates = [{"article_id": a, "relevance_score": float(s), "topic": t, "outlet": o}
                       for a, s, t, o in zip(frame.article_id, scores, frame.topic, frame.outlet)]
-        result = self._reranker_for(lam, live=True).rerank(
-            {"user_id": user_id, "feed_id": "live", "candidates": candidates})
+        result = reranker.rerank({"user_id": user_id, "feed_id": "live", "candidates": candidates})
         by_id = frame.set_index("article_id")
         items = []
         for row in result.ranking[:limit]:
@@ -241,7 +269,14 @@ class RecommenderService:
         return items
 
 
-def _personal_pool(builder, user_id, articles, vectors, size):
+# Today's news (demo mode): Agora keeps one memory per reader, started with the reader's
+# training week (counted as this many delivered lists), and the shortlist keeps the reader's
+# closest articles of each protected topic, so the reranker has stories it can bring up.
+LIVE_HISTORY_LISTS = 5
+LIVE_PROTECTED_PER_TOPIC = 3
+
+
+def _personal_pool(builder, user_id, articles, vectors, size, protected=(), per_protected=0):
     """Indices of a personal candidate pool: best per topic, then best overall."""
     from agora.models.live import reader_history
 
@@ -257,6 +292,9 @@ def _personal_pool(builder, user_id, articles, vectors, size):
         if topic not in seen_topics:
             seen_topics.add(topic)
             chosen.append(i)
+    for topic in protected:  # public interest: the closest few of each protected topic
+        extra = [i for i in order if articles.topic.iloc[i] == topic and i not in chosen][:max(per_protected - 1, 0)]
+        chosen.extend(extra)
     for i in order:  # interest: fill with the closest articles overall
         if len(chosen) >= size:
             break
