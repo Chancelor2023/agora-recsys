@@ -195,7 +195,8 @@ class RecommenderService:
         mtime = self.live_path.stat().st_mtime
         if self._live is None or self._live[0] != mtime:
             frame = pd.DataFrame(json.loads(self.live_path.read_text(encoding="utf-8")))
-            frame = frame.drop_duplicates("article_id").reset_index(drop=True)
+            # the same story can appear in several feeds of one outlet: keep it once
+            frame = frame.drop_duplicates("article_id").drop_duplicates("title").reset_index(drop=True)
             vectors = self.text_encoder((frame.title + "\n" + frame.lead).tolist())
             self._live = (mtime, frame, vectors)
         return self._live
